@@ -194,7 +194,7 @@ class LoadScreen(BaseLoadScreen):
 
         self.title_lbl = ttk.Label(
             self.frame,
-            text=self.title_text + '...',
+            text=f'{self.title_text}...',
             font=("Helvetica", 12, "bold"),
             cursor=tk_tools.Cursors.WAIT,
         )
@@ -217,9 +217,7 @@ class LoadScreen(BaseLoadScreen):
             if stage_name:
                 # If stage name is blank, don't add a caption
                 self.titles[st_id] = ttk.Label(
-                    self.frame,
-                    text=stage_name + ':',
-                    cursor=tk_tools.Cursors.WAIT,
+                    self.frame, text=f'{stage_name}:', cursor=tk_tools.Cursors.WAIT
                 )
                 self.titles[st_id].grid(
                     row=ind * 2 + 2,
@@ -271,10 +269,10 @@ class LoadScreen(BaseLoadScreen):
         """Show the window."""
         self.title_text = title
         self.win.title(title)
-        self.title_lbl['text'] = title + '...',
+        self.title_lbl['text'] = (f'{title}...', )
         for (st_id, _), name in zip(self.stages, labels):
             if st_id in self.titles:
-                self.titles[st_id]['text'] = name + ':'
+                self.titles[st_id]['text'] = f'{name}:'
         super().op_show(title, labels)
 
     def op_skip_stage(self, stage: str) -> None:
@@ -484,9 +482,9 @@ class SplashScreen(BaseLoadScreen):
                     height - (ind + 0.5) * 20,
                     20,
                     height - (ind - 0.5) * 20,
-                    fill='#00785A',  # 0, 120, 90
+                    fill='#00785A',
                     width=0,
-                    tags='bar_' + st_id,
+                    tags=f'bar_{st_id}',
                 )
                 # Border
                 canvas.create_rectangle(
@@ -501,9 +499,9 @@ class SplashScreen(BaseLoadScreen):
                     25,
                     height - ind * 20,
                     anchor='w',
-                    text=stage_name + ': (0/???)',
+                    text=f'{stage_name}: (0/???)',
                     fill='white',
-                    tags='text_' + st_id,
+                    tags=f'text_{st_id}',
                     font=progress_font,
                 )
 
@@ -519,20 +517,14 @@ class SplashScreen(BaseLoadScreen):
             )
             self.set_bar(stage, self.values[stage] / self.maxes[stage])
 
-        self.sml_canvas.itemconfig('text_' + stage, text=text)
-        self.lrg_canvas.itemconfig('text_' + stage, text=text)
+        self.sml_canvas.itemconfig(f'text_{stage}', text=text)
+        self.lrg_canvas.itemconfig(f'text_{stage}', text=text)
 
     def set_bar(self, stage: str, fraction: float) -> None:
         """Set a progress bar to this fractional length."""
         for canvas, width, height in self.canvas:
-            x1, y1, x2, y2 = canvas.coords('bar_' + stage)
-            canvas.coords(
-                'bar_' + stage,
-                20,
-                y1,
-                20 + round(fraction * (width - 40)),
-                y2,
-            )
+            x1, y1, x2, y2 = canvas.coords(f'bar_{stage}')
+            canvas.coords(f'bar_{stage}', 20, y1, 20 + round(fraction * (width - 40)), y2)
 
     def op_set_length(self, stage: str, num: int) -> None:
         """Set the number of items in a stage."""
@@ -541,19 +533,19 @@ class SplashScreen(BaseLoadScreen):
 
         for canvas, width, height in self.canvas:
 
-            canvas.delete('tick_' + stage)
+            canvas.delete(f'tick_{stage}')
 
             if num == 0:
                 continue  # No ticks
 
             # Draw the ticks in...
-            _, y1, _, y2 = canvas.coords('bar_' + stage)
+            _, y1, _, y2 = canvas.coords(f'bar_{stage}')
 
             dist = (width - 40) / num
             if round(dist) <= 1:
                 # Don't have ticks if they're right next to each other
                 return
-            tag = 'tick_' + stage
+            tag = f'tick_{stage}'
             for i in range(num):
                 pos = int(20 + dist * i)
                 canvas.create_line(
@@ -561,7 +553,7 @@ class SplashScreen(BaseLoadScreen):
                     fill='#00785A',
                     tags=tag,
                 )
-            canvas.tag_lower('tick_' + stage, 'bar_' + stage)
+            canvas.tag_lower(f'tick_{stage}', f'bar_{stage}')
 
     def reset_stages(self) -> None:
         """Reset all stages."""
@@ -573,8 +565,8 @@ class SplashScreen(BaseLoadScreen):
         self.maxes[stage] = 0
         for canvas, width, height in self.canvas:
             canvas.itemconfig(
-                'text_' + stage,
-                text=self.names[stage] + ': ' + TRANSLATION['skip'],
+                f'text_{stage}',
+                text=f'{self.names[stage]}: ' + TRANSLATION['skip'],
             )
         self.set_bar(stage, 1.0)  # Force stage to be max filled.
 
@@ -842,7 +834,7 @@ def run_background(
                         screen.win.attributes('-topmost', args)
                 else:
                     try:
-                        func = getattr(SCREENS[scr_id], 'op_' + operation)
+                        func = getattr(SCREENS[scr_id], f'op_{operation}')
                     except AttributeError:
                         raise ValueError(f'Bad command "{operation}"!')
                     try:

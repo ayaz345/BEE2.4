@@ -96,8 +96,8 @@ class StyleVar(PakObject, allow_mult=True, needs_foreground=True):
 
     def iter_trans_tokens(self) -> Iterator[TransTokenSource]:
         """Yield translation tokens used by this stylevar."""
-        yield self.name, self.id + '.name'
-        yield self.desc, self.id + '.desc'
+        yield (self.name, f'{self.id}.name')
+        yield (self.desc, f'{self.id}.desc')
 
     def applies_to_style(self, style: Style) -> bool:
         """Check to see if this will apply for the given style.
@@ -120,10 +120,7 @@ class StyleVar(PakObject, allow_mult=True, needs_foreground=True):
         if self.is_unstyled:
             return True
 
-        for style in Style.all():
-            if not self.applies_to_style(style):
-                return False
-        return True
+        return all(self.applies_to_style(style) for style in Style.all())
 
     @staticmethod
     def export(exp_data: ExportData) -> None:

@@ -61,10 +61,7 @@ class Block(Enum):
         """Return the appropriate enum, based on bool parameters."""
         off = 20 if is_pit else 10
         if is_top:
-            if is_bottom:
-                return cls(off)  # Single
-            else:
-                return cls(off + 1)  # top
+            return cls(off) if is_bottom else cls(off + 1)
         elif is_bottom:
             return cls(off + 3)  # Bottom
         else:
@@ -203,10 +200,7 @@ class Grid(MutableMapping[_grid_keys, Block]):
             block = super().get(next_pos.as_tuple(), Block.VOID)
             if block is Block.VOID:
                 raise ValueError(
-                    'Reached VOID at ({}) when '
-                    'raycasting from {} with direction {}!'.format(
-                        next_pos, start_pos, direction
-                    )
+                    f'Reached VOID at ({next_pos}) when raycasting from {start_pos} with direction {direction}!'
                 )
             if block in collide_set:
                 return pos
@@ -235,9 +229,7 @@ class Grid(MutableMapping[_grid_keys, Block]):
 
     def __setitem__(self, pos: _grid_keys, value: Block) -> None:
         if type(value) is not Block:
-            raise ValueError('Must be set to a Block item, not "{}"!'.format(
-                type(value).__name__,
-            ))
+            raise ValueError(f'Must be set to a Block item, not "{type(value).__name__}"!')
 
         self._grid[_conv_key(pos)] = value
 

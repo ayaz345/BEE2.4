@@ -12,11 +12,10 @@ from app.itemconfig import UpdateFunc, WidgetLookup, widget_sfx
 def decimal_points(num: float) -> int:
     """Count the number of decimal points required to display a number."""
     str_num = format(num, 'g')
-    if '.' in str_num:
-        whole, frac = str_num.split('.')
-        return len(frac)
-    else:
+    if '.' not in str_num:
         return 0
+    whole, frac = str_num.split('.')
+    return len(frac)
 
 
 @WidgetLookup('range', 'slider', wide=True)

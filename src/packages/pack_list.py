@@ -44,14 +44,14 @@ class PackList(PakObject, allow_mult=True):
                 # Skip blank lines, strip whitespace, and
                 # allow // comments.
                 for line in f:
-                    line = srctools.clean_line(line)
-                    if line:
+                    if line := srctools.clean_line(line):
                         files.append(line)
 
         # Deprecated old option.
-        for prop in data.info.find_all('AddIfMat'):
-            files.append(f'materials/{prop.value}.vmt')
-
+        files.extend(
+            f'materials/{prop.value}.vmt'
+            for prop in data.info.find_all('AddIfMat')
+        )
         if not files:
             raise ValueError(f'"{data.id}" has no files to pack!')
 

@@ -46,7 +46,7 @@ class Node(Generic[ConfT]):
         try:
             return Node(connections.ITEMS[name], conf)
         except KeyError:
-            raise ValueError('No item for "{}"?'.format(name)) from None
+            raise ValueError(f'No item for "{name}"?') from None
 
 
 def chain(
@@ -92,12 +92,17 @@ def chain(
         else:
             start_node = pop_node.prev
             while True:
-                if start_node.prev is None:
-                    break
-                # We've looped back.
-                elif start_node is pop_node:
-                    if not allow_loop:
-                        raise ValueError('Loop in linked items!')
+                if (
+                    start_node.prev is not None
+                    and start_node is pop_node
+                    and not allow_loop
+                ):
+                    raise ValueError('Loop in linked items!')
+                elif (
+                    start_node.prev is not None
+                    and start_node is pop_node
+                    or start_node.prev is None
+                ):
                     break
                 start_node = start_node.prev
 

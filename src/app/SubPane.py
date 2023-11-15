@@ -62,7 +62,7 @@ class SubPane(tk.Toplevel):
         self.relY = 0
         self.can_resize_x = resize_x
         self.can_resize_y = resize_y
-        super().__init__(parent, name='pane_' + name)
+        super().__init__(parent, name=f'pane_{name}')
         self.withdraw()  # Hide by default
 
         self.tool_button = make_tool_button(
@@ -175,7 +175,7 @@ class SubPane(tk.Toplevel):
             y=self.parent.winfo_y()+self.relY,
             win=self,
         )
-        self.geometry('+'+str(x)+'+'+str(y))
+        self.geometry(f'+{str(x)}+{str(y)}')
         self.parent.focus()
 
     def save_conf(self) -> None:

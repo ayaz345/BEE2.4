@@ -42,6 +42,3 @@ async def widget_checkmark_multi(
         checkbox, _ = await widget_checkmark(parent, var, conf)
         checkbox.grid(row=row, column=column)
         add_tooltip(checkbox, tim_text, delay=0)
-    # noinspection PyUnreachableCode
-    if False:
-        yield ('', nop_update)

@@ -345,8 +345,7 @@ prop_track_move_direction = ItemPropKind[Angle](
 # 0
 def _parse_pist_lower(value: str) -> int:
     # Bug, previous versions mistakenly wrote rounded floats.
-    if value.endswith('.0'):
-        value = value[:-2]
+    value = value.removesuffix('.0')
     try:
         pos = int(value)
         if 0 <= pos < 4:
@@ -358,8 +357,7 @@ def _parse_pist_lower(value: str) -> int:
 
 def _parse_pist_upper(value: str) -> int:
     # Bug, previous versions mistakenly wrote rounded floats.
-    if value.endswith('.0'):
-        value = value[:-2]
+    value = value.removesuffix('.0')
     try:
         pos = int(value)
         if 0 < pos <= 4:
@@ -615,13 +613,12 @@ def _parse_angled_panel_anim(value: str) -> PanelAnimation:
     if value.startswith('ramp_') and value.endswith('_deg_open'):
         value = value[5:-9]
     ind = int(value)
-    if ind < 30: # If 0-3 use index, if 30/45/60/90 use that
-        try:
-            return prop_angled_panel_anim.subtype_values[ind]
-        except IndexError:
-            raise ValueError(f'Unknown animation {orig_value}')
-    else:
+    if ind >= 30:
         return PanelAnimation(int(value))
+    try:
+        return prop_angled_panel_anim.subtype_values[ind]
+    except IndexError:
+        raise ValueError(f'Unknown animation {orig_value}')
 
 # The angle the panel rises to.
 prop_angled_panel_anim = ItemPropKind[PanelAnimation](

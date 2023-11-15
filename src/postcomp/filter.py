@@ -52,7 +52,7 @@ def cube_filter(ctx: Context) -> None:
 
     for filename, buffer in script_buffers.items():
         ctx.pack.pack_file(
-            'scripts/vscripts/' + filename,
+            f'scripts/vscripts/{filename}',
             FileType.VSCRIPT_SQUIRREL,
             buffer.getvalue(),
         )

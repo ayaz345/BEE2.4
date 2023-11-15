@@ -51,12 +51,8 @@ def load_settings(pit: Property):
         'triple',
         'pillar',
     ):
-        vals = [
-            prop.value
-            for prop in
-            pit.find_all(inst_type + '_inst')
-        ]
-        if len(vals) == 0:
+        vals = [prop.value for prop in pit.find_all(f'{inst_type}_inst')]
+        if not vals:
             vals = [""]
         PIT_INST[inst_type] = vals
 
@@ -333,18 +329,6 @@ def make_pit_shell(vmf: VMF):
 
             if lowest is None:
                 continue
-                # TODO: For opened areas (Wheatley), generate a floor...
-                real_pos = brushLoc.grid_to_world(Vec(x, y, 0))
-                prism = vmf.make_prism(
-                    real_pos + (64, 64, BOTTOMLESS_PIT_MIN + 8),
-                    real_pos + (-64, -64, BOTTOMLESS_PIT_MIN),
-                    mat='tools/toolsnodraw',
-                )
-                prism.bottom.mat = consts.Special.BACKPANELS_CHEAP
-
-                vmf.add_brush(prism.solid)
-                continue
-
             if block_types[lowest].is_solid:
                 real_pos = brushLoc.grid_to_world(Vec(x, y, lowest))
                 for z in range(0, 10):

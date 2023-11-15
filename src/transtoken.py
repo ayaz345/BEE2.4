@@ -209,10 +209,7 @@ class TransToken:
     def __str__(self) -> str:
         """Calling str on a token translates it."""
         text = self._convert_token()
-        if self.parameters:
-            return text.format_map(self.parameters)
-        else:
-            return text
+        return text.format_map(self.parameters) if self.parameters else text
 
     def translate_html(self) -> str:
         """Translate to text, escaping parameters for HTML.

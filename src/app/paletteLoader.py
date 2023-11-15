@@ -224,11 +224,7 @@ class Palette:
         self.group = group
 
         # ID unique to this palette.
-        if uuid is not None:
-            self.uuid = uuid
-        else:
-            self.uuid = uuid4()
-
+        self.uuid = uuid if uuid is not None else uuid4()
         # If loaded from a file, the path to use.
         # None determines a filename automatically.
         self.filename = filename
@@ -253,10 +249,10 @@ class Palette:
         with open(path, encoding='utf8') as f:
             props = Property.parse(f, path)
         name = props['Name', '??']
-        items = []
-        for item in props.find_children('Items'):
-            items.append((item.real_name, int(item.value)))
-
+        items = [
+            (item.real_name, int(item.value))
+            for item in props.find_children('Items')
+        ]
         trans_name = props['TransName', '']
         if trans_name:
             # Builtin, force a fixed uuid. This is mainly for LAST_EXPORT.
@@ -428,12 +424,11 @@ def load_palettes() -> Iterator[Palette]:
 
 def parse_legacy(posfile, propfile, path) -> Palette | None:
     """Parse the original BEE2.2 palette format."""
-    props = Property.parse(propfile, path + ':properties.txt')
+    props = Property.parse(propfile, f'{path}:properties.txt')
     name = props['name', 'Unnamed']
     pos = []
     for dirty_line in posfile:
-        line = srctools.clean_line(dirty_line)
-        if line:
+        if line := srctools.clean_line(dirty_line):
             # Lines follow the form
             # "ITEM_BUTTON_FLOOR", 2
             # for subtype 3 of the button

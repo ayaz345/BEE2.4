@@ -108,7 +108,7 @@ class Item(Generic[UserT]):
         - user can be set to any value.
         """
         self.values = values
-        self.state_var = tk.BooleanVar(value=bool(state))
+        self.state_var = tk.BooleanVar(value=state)
         self.master: CheckDetails | None = None
         self.check: ttk.Checkbutton | None = None
         self.locked = lock_check
@@ -491,11 +491,7 @@ class CheckDetails(ttk.Frame, Generic[UserT]):
         """Click event for headers."""
         if self.sort_ind is not None:
             self.headers[self.sort_ind].sorter['text'] = ''
-        if self.sort_ind == index:
-            self.rev_sort = not self.rev_sort
-        else:
-            self.rev_sort = False
-
+        self.rev_sort = not self.rev_sort if self.sort_ind == index else False
         self.headers[index].sorter['text'] = UP_ARROW if self.rev_sort else DN_ARROW
         self.sort_ind = index
 

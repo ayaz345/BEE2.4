@@ -200,7 +200,7 @@ class Item:
         assert self.name, 'Blank name!'
 
     def __repr__(self) -> str:
-        return '<Item {}: "{}">'.format(self.config.id, self.name)
+        return f'<Item {self.config.id}: "{self.name}">'
 
     @property
     def traits(self) -> Set[str]:
@@ -356,11 +356,7 @@ class Connection:
         self.outputs = list(outputs)
 
     def __repr__(self) -> str:
-        return '<Connection {} {} -> {}>'.format(
-            CONN_NAMES[self.type],
-            self._from.name,
-            self._to.name,
-        )
+        return f'<Connection {CONN_NAMES[self.type]} {self._from.name} -> {self._to.name}>'
 
     def add(self) -> None:
         """Add this to the directories."""
@@ -402,7 +398,7 @@ def collapse_item(item: Item) -> None:
         [input_conn] = item.inputs
         input_item = input_conn.from_item
     except ValueError:
-        raise ValueError('Too many inputs for "{}"!'.format(item.name))
+        raise ValueError(f'Too many inputs for "{item.name}"!')
 
     LOGGER.debug('Merging "{}" into "{}"...', item.name, input_item.name)
 
@@ -427,7 +423,7 @@ def read_configs(all_items: Iterable[editoritems.Item]) -> None:
     """Load our connection configuration from the config files."""
     for item in all_items:
         if item.id.casefold() in ITEM_TYPES:
-            raise ValueError('Duplicate item type "{}"'.format(item.id))
+            raise ValueError(f'Duplicate item type "{item.id}"')
         if item.conn_config is None and (item.force_input or item.force_output):
             # The item has no config, but it does force input/output.
             # Generate a blank config so the Item is created.
@@ -491,11 +487,7 @@ def calc_connections(
             inst.remove()
         elif 'indicator_panel' in traits:
             panels[inst_name] = inst
-        elif 'fizzler_model' in traits:
-            # Ignore fizzler models - they shouldn't have the connections.
-            # Just the base itself.
-            pass
-        else:
+        elif 'fizzler_model' not in traits:
             # Normal item.
             item_id = instance_traits.get_item_id(inst)
             if item_id is None:
@@ -551,10 +543,7 @@ def calc_connections(
 
         if item.inst.outputs and item.config is None:
             raise ValueError(
-                'No connections for item "{}", '
-                'but outputs in the map!'.format(
-                    instance_traits.get_item_id(item.inst)
-                )
+                f'No connections for item "{instance_traits.get_item_id(item.inst)}", but outputs in the map!'
             )
 
         for out in item.inst.outputs:
@@ -563,7 +552,6 @@ def calc_connections(
         # Remove the original outputs, we've consumed those already.
         item.inst.outputs.clear()
 
-        # Pre-set the timer value, for items without antlines but with an output.
         if consts.FixupVars.TIM_DELAY in item.inst.fixup:
             if item.config.output_act or item.config.output_deact:
                 item.timer = tim = item.inst.fixup.int(consts.FixupVars.TIM_DELAY)
@@ -947,7 +935,7 @@ def add_timer_relay(item: Item, has_sounds: bool) -> None:
     """Make a relay to play timer sounds, or fire once the outputs are done."""
     assert item.timer is not None
 
-    rl_name = item.name + '_timer_rl'
+    rl_name = f'{item.name}_timer_rl'
 
     relay = item.inst.map.create_ent(
         'logic_relay',
@@ -980,7 +968,7 @@ def add_timer_relay(item: Item, has_sounds: bool) -> None:
         if timer_cc is None and timer_sound != 'Portal.room1_TickTock':
             timer_cc = 'Portal.room1_TickTock'
         if timer_cc:
-            timer_cc = 'cc_emit ' + timer_cc
+            timer_cc = f'cc_emit {timer_cc}'
 
         # Write out the VScript code to precache the sound, and play it on
         # demand.
@@ -1036,7 +1024,7 @@ def add_item_inputs(
     """Handle either the primary or secondary inputs to an item."""
     item.inst.fixup[count_var] = len(inputs)
 
-    if len(inputs) == 0:
+    if not inputs:
         # Special case - spawnfire items with no inputs need to fire
         # off the outputs. There's no way to control those, so we can just
         # fire it off.
@@ -1197,13 +1185,12 @@ def add_item_inputs(
         spawn_relay['startdisabled'] = '0'
 
         spawn_relay.add_out(
-            Output('OnTrigger', '!self', 'Fire' + disable_user, only_once=True),
+            Output(
+                'OnTrigger', '!self', f'Fire{disable_user}', only_once=True
+            ),
             Output('OnSpawn', '!self', 'Trigger', delay=0.1),
         )
-        for output_name, input_cmds in [
-            ('On' + enable_user, enable_cmd),
-            ('On' + disable_user, disable_cmd)
-        ]:
+        for output_name, input_cmds in [(f'On{enable_user}', enable_cmd), (f'On{disable_user}', disable_cmd)]:
             for cmd in input_cmds:
                 try:
                     spawn_relay.add_out(localise_output(cmd, output_name, item.inst))
@@ -1215,11 +1202,11 @@ def add_item_inputs(
 
         # Now overwrite input commands to redirect to the relay.
         enable_cmd = [
-            Output('', relay_cmd_name, 'Fire' + enable_user),
+            Output('', relay_cmd_name, f'Fire{enable_user}'),
             Output('', relay_cmd_name, 'Disable', only_once=True),
         ]
         disable_cmd = [
-            Output('', relay_cmd_name, 'Fire' + disable_user),
+            Output('', relay_cmd_name, f'Fire{disable_user}'),
             Output('', relay_cmd_name, 'Disable', only_once=True),
         ]
         # For counters, swap out the input type.
@@ -1313,7 +1300,7 @@ def add_item_indicators(
     pan_item: Config,
 ) -> None:
     """Generate the commands for antlines and the overlays themselves."""
-    ant_name = '@{}_overlay'.format(item.name)
+    ant_name = f'@{item.name}_overlay'
     has_sign = len(item.ind_panels) > 0
     has_ant = len(item.antlines) > 0
 
@@ -1391,7 +1378,7 @@ def add_item_indicators(
         toggle = item.inst.map.create_ent(
             classname='env_texturetoggle',
             origin=Vec.from_str(item.inst['origin']) + (0, 0, 16),
-            targetname='toggle_' + item.name,
+            targetname=f'toggle_{item.name}',
             target=ant_name,
         )
         # Don't use the configurable inputs - if they want that, use custAntline.

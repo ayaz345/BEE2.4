@@ -64,7 +64,7 @@ class FakeZip:
         rel_path = os.path.relpath
         for dirpath, dirnames, filenames in os.walk(base):
             for name in filenames:
-                yield rel_path(dirpath + '/' + name, base)
+                yield rel_path(f'{dirpath}/{name}', base)
 
     def namelist(self):
         """We actually return a set, since this is mainly used for 'in'
@@ -116,13 +116,13 @@ def zip_names(zip):
     """
     if hasattr(zip, 'names'):
         return zip.names()
-    else:
-        def zip_filter():
-            # 'Fix' an issue where directories are also being listed...
-            for name in zip.namelist():
-                if name[-1] != '/':
-                    yield name
-        return zip_filter()
+    def zip_filter():
+        # 'Fix' an issue where directories are also being listed...
+        for name in zip.namelist():
+            if name[-1] != '/':
+                yield name
+
+    return zip_filter()
 
 
 def zip_open_bin(zip, filename):

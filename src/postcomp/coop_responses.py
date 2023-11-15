@@ -17,15 +17,14 @@ def generate_coop_responses(ctx: Context) -> None:
             if key.startswith('choreo')
         ]
         response.remove()
-        
+
     if not responses:
         return
-   
+
     script = ["BEE2_RESPONSES <- {"]
     for response_type, lines in sorted(responses.items()):
         script.append(f'\t{response_type} = [')
-        for line in lines:
-            script.append(f'\t\tCreateSceneEntity("{line}"),')
+        script.extend(f'\t\tCreateSceneEntity("{line}"),' for line in lines)
         script.append('\t],')
     script.append('};')
 

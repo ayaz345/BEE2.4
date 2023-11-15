@@ -66,14 +66,14 @@ class MaterialGroupMeta(EnumMeta):
         namespace = super().__prepare__(cls, bases, **kwd)
         return _MaterialGroupNS(cast(MutableMapping[str, Any], namespace))
 
-    def __new__(mcs, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any) -> MaterialGroupMeta:
+    def __new__(cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any) -> MaterialGroupMeta:
         """Unpack the dict type back to the original for EnumMeta.
 
         It accesses attributes, so it can't have our wrapper.
         """
         assert isinstance(namespace, _MaterialGroupNS)
         # Is always enum._EnumDict, but that's private.
-        return super().__new__(mcs, name, bases, cast(Any, namespace.mapping), **kwds)
+        return super().__new__(cls, name, bases, cast(Any, namespace.mapping), **kwds)
 
     def __contains__(cls, value: object) -> bool:
         """MaterialGroup can check if strings are equal to a member."""

@@ -468,7 +468,7 @@ def parse_antlines(vmf: VMF) -> tuple[
 
         antlines.setdefault(over_name, []).append(Antline(over_name, segments))
 
-    LOGGER.info('Done! ({} antlines)'.format(sum(map(len, antlines.values()))))
+    LOGGER.info(f'Done! ({sum(map(len, antlines.values()))} antlines)')
     return antlines, side_to_seg
 
 
@@ -518,7 +518,5 @@ def fix_single_straight(
         # Else: Both equal, we're fine.
     if seg.start == seg.end:
         raise ValueError(
-            'Cannot determine orientation '
-            'for 1-wide straight '
-            'antline at ({})!'.format(seg.start)
+            f'Cannot determine orientation for 1-wide straight antline at ({seg.start})!'
         )

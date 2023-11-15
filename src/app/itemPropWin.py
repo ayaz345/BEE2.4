@@ -211,7 +211,7 @@ def save_angle(key: str, new_angle: int) -> None:
     elif new_angle < last_angle:
         sound.fx_blockable('lower_' + random.choice('123'))
     last_angle = new_angle
-    out_values[key] = 'ramp_' + str(new_angle) + '_deg_open'
+    out_values[key] = f'ramp_{new_angle}_deg_open'
 
 
 def save_tim(key: str, val: str) -> None:
@@ -309,10 +309,7 @@ def exit_win(_: tk.Event=None) -> None:
             # Use out_values if it has a matching key,
             # or use values by default.
             out_val = out_values.get(key, values[key])
-            if isinstance(out_val, tk.Variable):
-                out[key] = str(out_val.get())
-            else:
-                out[key] = out_val
+            out[key] = str(out_val.get()) if isinstance(out_val, tk.Variable) else out_val
     callback(out)
 
     if contextWin.is_visible():
@@ -629,7 +626,7 @@ if __name__ == '__main__':
 
     def callback(props: dict[str, str]) -> None:
         for key, value in sorted(props.items()):
-            print(key + ' = ' + repr(value))
+            print(f'{key} = {repr(value)}')
 
     init(callback)
     all_vals = {

@@ -1,4 +1,5 @@
 """Allows enabling and disabling specific voicelines."""
+
 import functools
 import itertools
 from decimal import Decimal
@@ -32,7 +33,7 @@ QUOTE_FONT['weight'] = 'bold'
 
 
 IMG: Dict[str, Tuple[img.Handle, TransToken]] = {
-    spr: (img.Handle.builtin('icons/quote_' + spr), ctx)
+    spr: (img.Handle.builtin(f'icons/quote_{spr}'), ctx)
     for spr, ctx in [
         ('sp', TransToken.ui('Singleplayer')),
         ('coop', TransToken.ui('Cooperative')),
@@ -237,9 +238,9 @@ def show(quote_pack: QuotePack):
 
     quote_data = quote_pack.config
 
-    config = ConfigFile('voice/' + quote_pack.id + '.cfg')
-    config_mid = ConfigFile('voice/MID_' + quote_pack.id + '.cfg')
-    config_resp = ConfigFile('voice/RESP_' + quote_pack.id + '.cfg')
+    config = ConfigFile(f'voice/{quote_pack.id}.cfg')
+    config_mid = ConfigFile(f'voice/MID_{quote_pack.id}.cfg')
+    config_resp = ConfigFile(f'voice/RESP_{quote_pack.id}.cfg')
 
     # Clear the transcript textbox
     text = UI['trans']
@@ -511,7 +512,7 @@ def find_resp_lines(quote_block: Property) -> Iterator[Tuple[
 ]]:
     """Find the line blocks in response items."""
     for index, prop in enumerate(quote_block):
-        yield [], prop, 'line_{}'.format(index)
+        yield ([], prop, f'line_{index}')
 
 
 def get_trans_lines(trans_block):
@@ -519,6 +520,6 @@ def get_trans_lines(trans_block):
         if prop.name == 'trans':
             if ':' in prop.value:
                 name, trans = prop.value.split(':', 1)
-                yield name.rstrip(), ': "' + trans.lstrip() + '"'
+                yield (name.rstrip(), f': "{trans.lstrip()}"')
             else:
-                yield '', '"' + prop.value + '"'
+                yield ('', f'"{prop.value}"')

@@ -138,7 +138,7 @@ class P2C:
         # need to read it as bytes and convert to utf-8 ourselves - zips
         # don't convert encodings automatically for us.
         try:
-            with zip_open_bin(zip_file, path + '.p2c') as file:
+            with zip_open_bin(zip_file, f'{path}.p2c') as file:
                 # Decode the P2C as UTF-8, and skip unknown characters.
                 # We're only using it for display purposes, so that should
                 # be sufficient.
@@ -239,26 +239,16 @@ class Date:
             return self.date > other.date
 
     def __le__(self, other: 'Date') -> bool:
-        if self.date is None:
-            return other.date is None
-        else:
-            return self.date <= other.date
+        return other.date is None if self.date is None else self.date <= other.date
 
     def __ge__(self, other: 'Date') -> bool:
-        if self.date is None:
-            return other.date is None
-        else:
-            return self.date >= other.date
+        return other.date is None if self.date is None else self.date >= other.date
 
     def __eq__(self, other) -> bool:
-        if isinstance(other, Date):
-            return self.date == other.date
-        return NotImplemented
+        return self.date == other.date if isinstance(other, Date) else NotImplemented
 
     def __ne__(self, other) -> bool:
-        if isinstance(other, Date):
-            return self.date != other.date
-        return NotImplemented
+        return self.date != other.date if isinstance(other, Date) else NotImplemented
 
 
 # Note: All the backup functions use zip files, but also work on FakeZip
@@ -301,8 +291,7 @@ def load_game(game: 'gameMan.Game'):
     """Callback for gameMan, load in files for a game."""
     game_name.set(game.name)
 
-    puzz_path = find_puzzles(game)
-    if puzz_path:
+    if puzz_path := find_puzzles(game):
         zip_file = FakeZip(puzz_path)
         try:
             BACKUPS['game'] = load_backup(zip_file)
@@ -321,7 +310,7 @@ def find_puzzles(game: 'gameMan.Game') -> Optional[str]:
     # 'portal2' changes with different games.
 
     puzzle_folder = PUZZLE_FOLDERS.get(str(game.steamID), 'portal2')
-    path = game.abs_path(puzzle_folder + '/puzzles/')
+    path = game.abs_path(f'{puzzle_folder}/puzzles/')
 
     for folder in os.listdir(path):
         # The steam ID is all digits, so look for a folder with only digits
@@ -349,8 +338,8 @@ def backup_maps(maps: List[P2C]) -> None:
     # Here we'll just add entries into BACKUPS['back'].
     # Also check for overwriting
     for p2c in maps:
-        scr_path = p2c.filename + '.jpg'
-        map_path = p2c.filename + '.p2c'
+        scr_path = f'{p2c.filename}.jpg'
+        map_path = f'{p2c.filename}.p2c'
         if map_path in zip_names(back_zip) or scr_path in zip_names(back_zip):
             if not tk_tools.askyesno(
                 title=TRANS_OVERWRITE_TITLE,
@@ -399,10 +388,8 @@ def auto_backup(game: 'gameMan.Game', loader: loadScreen.LoadScreen) -> None:
     loader.set_length(AUTO_BACKUP_STAGE, len(to_backup))
 
     if extra_back_count:
-        back_files = [
-            AUTO_BACKUP_FILE.format(game=safe_name, ind='')
-        ] + [
-            AUTO_BACKUP_FILE.format(game=safe_name, ind='_'+str(i+1))
+        back_files = [AUTO_BACKUP_FILE.format(game=safe_name, ind='')] + [
+            AUTO_BACKUP_FILE.format(game=safe_name, ind=f'_{str(i + 1)}')
             for i in range(extra_back_count)
         ]
         # Move each file over by 1 index, ignoring missing ones
@@ -460,8 +447,8 @@ def save_backup() -> None:
     with copy_loader:
         for p2c in maps:
             old_zip = p2c.zip_file
-            map_path = p2c.filename + '.p2c'
-            scr_path = p2c.filename + '.jpg'
+            map_path = f'{p2c.filename}.p2c'
+            scr_path = f'{p2c.filename}.jpg'
             if scr_path in zip_names(old_zip):
                 with zip_open_bin(old_zip, scr_path) as f:
                     new_zip.writestr(scr_path, f.read())
@@ -501,8 +488,8 @@ def restore_maps(maps: List[P2C]) -> None:
     with copy_loader:
         for p2c in maps:
             back_zip = p2c.zip_file
-            scr_path = p2c.filename + '.jpg'
-            map_path = p2c.filename + '.p2c'
+            scr_path = f'{p2c.filename}.jpg'
+            map_path = f'{p2c.filename}.p2c'
             abs_scr = os.path.join(game_dir, scr_path)
             abs_map = os.path.join(game_dir, map_path)
             if os.path.isfile(abs_scr) or os.path.isfile(abs_map):
@@ -728,8 +715,8 @@ def ui_delete_game() -> None:
     try:
         with deleting_loader:
             for p2c in to_delete:
-                scr_path = p2c.filename + '.jpg'
-                map_path = p2c.filename + '.p2c'
+                scr_path = f'{p2c.filename}.jpg'
+                map_path = f'{p2c.filename}.p2c'
                 abs_scr = os.path.join(game_dir, scr_path)
                 abs_map = os.path.join(game_dir, map_path)
                 try:
@@ -753,47 +740,49 @@ def init() -> None:
         ('back_', TransToken.ui('Restore:')),
         ('game_', TransToken.ui('Backup:')),
     ]:
-        UI[cat + 'frame'] = frame = ttk.Frame(
+        UI[f'{cat}frame'] = frame = ttk.Frame(
             window,
         )
-        UI[cat + 'title_frame'] = title_frame = ttk.Frame(
+        UI[f'{cat}title_frame'] = title_frame = ttk.Frame(
             frame,
         )
         title_frame.grid(row=0, column=0, sticky='EW')
-        UI[cat + 'title'] = ttk.Label(
+        UI[f'{cat}title'] = ttk.Label(
             title_frame,
             font='TkHeadingFont',
         )
-        UI[cat + 'title'].grid(row=0, column=0)
+        UI[f'{cat}title'].grid(row=0, column=0)
         title_frame.rowconfigure(0, weight=1)
         title_frame.columnconfigure(0, weight=1)
 
-        UI[cat + 'details'] = CheckDetails(
+        UI[f'{cat}details'] = CheckDetails(
             frame,
             headers=HEADERS,
         )
-        UI[cat + 'details'].grid(row=1, column=0, sticky='NSEW')
+        UI[f'{cat}details'].grid(row=1, column=0, sticky='NSEW')
         frame.rowconfigure(1, weight=1)
         frame.columnconfigure(0, weight=1)
 
         button_frame = ttk.Frame(frame)
         button_frame.grid(column=0, row=2)
         set_text(ttk.Label(button_frame), btn_text).grid(row=0, column=0)
-        UI[cat + 'btn_all'] = ttk.Button(
+        UI[f'{cat}btn_all'] = ttk.Button(
             button_frame,
             text='All',
             width=3,
         )
-        UI[cat + 'btn_sel'] = set_text(ttk.Button(button_frame, width=8), TransToken.ui('Checked'))
+        UI[f'{cat}btn_sel'] = set_text(
+            ttk.Button(button_frame, width=8), TransToken.ui('Checked')
+        )
 
-        UI[cat + 'btn_all'].grid(row=0, column=1)
-        UI[cat + 'btn_sel'].grid(row=0, column=2)
+        UI[f'{cat}btn_all'].grid(row=0, column=1)
+        UI[f'{cat}btn_sel'].grid(row=0, column=2)
 
-        UI[cat + 'btn_del'] = btn_del = ttk.Button(button_frame, width=14)
+        UI[f'{cat}btn_del'] = btn_del = ttk.Button(button_frame, width=14)
         set_text(btn_del, TransToken.ui('Delete Checked'))
         btn_del.grid(row=1, column=0, columnspan=3)
 
-        tk_tools.add_mousewheel(UI[cat + 'details'].wid_canvas, UI[cat + 'frame'])
+        tk_tools.add_mousewheel(UI[f'{cat}details'].wid_canvas, UI[f'{cat}frame'])
 
     game_refresh = ttk.Button(
         UI['game_title_frame'],

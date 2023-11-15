@@ -32,7 +32,7 @@ class QuotePack(PakObject, needs_foreground=True):
         self.selitem_data = selitem_data
         self.cave_skin = skin
         self.config = config
-        set_cond_source(config, 'QuotePack <{}>'.format(quote_id))
+        set_cond_source(config, f'QuotePack <{quote_id}>')
         self.chars = chars or {'??'}
         self.studio = studio
         self.studio_actor = studio_actor
@@ -115,7 +115,7 @@ class QuotePack(PakObject, needs_foreground=True):
             self.turret_hate = override.turret_hate
 
     def __repr__(self) -> str:
-        return '<Voice:' + self.id + '>'
+        return f'<Voice:{self.id}>'
 
     @staticmethod
     def export(exp_data: ExportData) -> None:
@@ -127,7 +127,7 @@ class QuotePack(PakObject, needs_foreground=True):
             voice = QuotePack.by_id(exp_data.selected)  # type: QuotePack
         except KeyError:
             raise Exception(
-                "Selected voice ({}) doesn't exist?".format(exp_data.selected)
+                f"Selected voice ({exp_data.selected}) doesn't exist?"
             ) from None
 
         vbsp_config = exp_data.vbsp_conf  # type: Property
@@ -167,12 +167,7 @@ class QuotePack(PakObject, needs_foreground=True):
             path = utils.conf_location('config/voice/') / (prefix.upper() + voice.id + '.cfg')
             LOGGER.info('Voice conf path: {}', path)
             if path.is_file():
-                shutil.copy(
-                    str(path),
-                    exp_data.game.abs_path(
-                        'bin/bee2/{}voice.cfg'.format(prefix)
-                    )
-                )
+                shutil.copy(str(path), exp_data.game.abs_path(f'bin/bee2/{prefix}voice.cfg'))
                 LOGGER.info('Written "{}voice.cfg"', prefix)
             else:
                 LOGGER.info('No {} voice config!', pretty)

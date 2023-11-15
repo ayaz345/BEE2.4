@@ -148,16 +148,13 @@ class Music(PakObject, needs_foreground=True):
 
     def iter_trans_tokens(self) -> Iterator[TransTokenSource]:
         """Yield all translation tokens used by this music."""
-        yield from self.selitem_data.iter_trans_tokens('music/' + self.id)
+        yield from self.selitem_data.iter_trans_tokens(f'music/{self.id}')
 
     def provides_channel(self, channel: MusicChannel) -> bool:
         """Check if this music has this channel."""
         if self.sound[channel]:
             return True
-        if channel is MusicChannel.BASE and self.inst:
-            # The instance provides the base track.
-            return True
-        return False
+        return bool(channel is MusicChannel.BASE and self.inst)
 
     def has_channel(self, packset: PackagesSet, channel: MusicChannel) -> bool:
         """Check if this track or its children has a channel."""
@@ -188,9 +185,7 @@ class Music(PakObject, needs_foreground=True):
             child = Music.by_id(self.children[channel])
         except KeyError:
             child = self
-        if child.sound[channel]:
-            return child.id
-        return None
+        return child.id if child.sound[channel] else None
 
     def get_sample(self, channel: MusicChannel) -> str | None:
         """Get the path to the sample file, if present."""
@@ -266,9 +261,7 @@ class Music(PakObject, needs_foreground=True):
 
         for music in packset.all_obj(cls):
             for channel in MusicChannel:
-                # Base isn't present in this.
-                child_id = music.children.get(channel, '')
-                if child_id:
+                if child_id := music.children.get(channel, ''):
                     try:
                         packset.obj_by_id(cls, child_id)
                     except KeyError:

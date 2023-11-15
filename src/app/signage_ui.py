@@ -47,8 +47,7 @@ async def apply_config(data: Layout) -> None:
             LOGGER.warning('Invalid timer value {}!', timer)
             continue
 
-        value = data.signs.get(timer, '')
-        if value:
+        if value := data.signs.get(timer, ''):
             try:
                 slot.contents = packages.LOADED.obj_by_id(Signage, value)
             except KeyError:

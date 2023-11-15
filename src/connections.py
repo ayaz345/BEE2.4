@@ -73,10 +73,7 @@ class FeatureMode(Enum):
 
     def valid(self, has_inputs: bool) -> bool:
         """Check if this is valid for the item."""
-        if self.value == 'dynamic':
-            return has_inputs
-        else:
-            return self.value == 'always'
+        return has_inputs if self.value == 'dynamic' else self.value == 'always'
 
 
 class OutNames(Enum):
@@ -104,10 +101,7 @@ def _intern_out(out: tuple[str | None, str] | None) -> tuple[str | None, str] | 
 def format_output_name(out_tup: tuple[str | None, str]) -> str:
     """Convert the output tuple into a nice string."""
     inst, out = out_tup
-    if inst is not None:
-        return f'{inst} -> {out}'
-    else:
-        return out
+    return f'{inst} -> {out}' if inst is not None else out
 
 
 class Config:
@@ -189,16 +183,8 @@ class Config:
 
         # Allow passing in an output with a blank command, to indicate
         # no outputs.
-        if output_act == (None, ''):
-            self.output_act = None
-        else:
-            self.output_act = output_act
-
-        if output_deact == (None, ''):
-            self.output_deact = None
-        else:
-            self.output_deact = output_deact
-
+        self.output_act = None if output_act == (None, '') else output_act
+        self.output_deact = None if output_deact == (None, '') else output_deact
         # If set, automatically play tick-tock sounds when output is on.
         self.timer_sound_pos = timer_sound_pos
         # These are fired when the time elapses.
@@ -441,21 +427,17 @@ class Config:
             ]
             primary = ''
 
-        for out in self.enable_cmd:
-            # Slice to strip the beginning "<Output> ".
-            text.append(f'{primary}Enable {str(out)[9:]}')
-        for out in self.disable_cmd:
-            text.append(f'{primary}Disable {str(out)[9:]}')
-        for out in self.sec_enable_cmd:
-            text.append(f'Secondary Enable {str(out)[9:]}')
-        for out in self.sec_disable_cmd:
-            text.append(f'Secondary Disable {str(out)[9:]}')
-
+        text.extend(f'{primary}Enable {str(out)[9:]}' for out in self.enable_cmd)
+        text.extend(f'{primary}Disable {str(out)[9:]}' for out in self.disable_cmd)
+        text.extend(f'Secondary Enable {str(out)[9:]}' for out in self.sec_enable_cmd)
+        text.extend(
+            f'Secondary Disable {str(out)[9:]}' for out in self.sec_disable_cmd
+        )
         # Output, but it goes backwards towards the input item.
         if self.output_lock is not None:
-            text.append('Button Lock: ' + format_output_name(self.output_lock))
+            text.append(f'Button Lock: {format_output_name(self.output_lock)}')
         if self.output_unlock is not None:
-            text.append('Button Unlock: ' + format_output_name(self.output_unlock))
+            text.append(f'Button Unlock: {format_output_name(self.output_unlock)}')
 
         return '\n'.join(text)
 
@@ -467,17 +449,19 @@ class Config:
             text.append(f'Affinity: {self.output_type.value.title()}')
 
         if self.output_act is not None:
-            text.append('Activation: ' + format_output_name(self.output_act))
+            text.append(f'Activation: {format_output_name(self.output_act)}')
         if self.output_deact is not None:
-            text.append('Deactivation: ' + format_output_name(self.output_deact))
+            text.append(f'Deactivation: {format_output_name(self.output_deact)}')
 
         if self.timer_start is not None:
-            for out in self.timer_start:
-                text.append('Timer Start: ' + format_output_name(out))
+            text.extend(
+                f'Timer Start: {format_output_name(out)}'
+                for out in self.timer_start
+            )
         if self.timer_stop is not None:
-            for out in self.timer_stop:
-                text.append('Timer Stop: ' + format_output_name(out))
-
+            text.extend(
+                f'Timer Stop: {format_output_name(out)}' for out in self.timer_stop
+            )
         if self.timer_sound_pos is not None:
             text += [
                 f'Timer Sound Offset: ({self.timer_sound_pos})',
@@ -485,13 +469,10 @@ class Config:
                 f'Only lock infinite buttons: {self.inf_lock_only}',
             ]
 
-        for output in self.timer_done_cmd:
-            text.append(f'Timer Complete: {str(output)[9:]}')
-
+        text.extend(
+            f'Timer Complete: {str(output)[9:]}' for output in self.timer_done_cmd
+        )
         if self.lock_cmd and self.unlock_cmd:
-            for output in self.lock_cmd:
-                text.append(f'Button Lock {str(output)[9:]}')
-            for output in self.unlock_cmd:
-                text.append(f'Button Unlock {str(output)[9:]}')
-
+            text.extend(f'Button Lock {str(output)[9:]}' for output in self.lock_cmd)
+            text.extend(f'Button Unlock {str(output)[9:]}' for output in self.unlock_cmd)
         return '\n'.join(text)

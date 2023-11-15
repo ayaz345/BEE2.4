@@ -212,9 +212,11 @@ async def main(files: List[str]) -> int:
     for file in files:
         file_path = Path(file)
         if file_path.is_dir():
-            for sub_file in file_path.glob('**/*'):
-                if sub_file.is_file():
-                    file_list.append(sub_file)
+            file_list.extend(
+                sub_file
+                for sub_file in file_path.glob('**/*')
+                if sub_file.is_file()
+            )
         else:
             file_list.append(file_path)
 

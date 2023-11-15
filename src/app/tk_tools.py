@@ -108,7 +108,7 @@ else:
 
 USE_SIZEGRIP = not utils.MAC  # On Mac, we don't want to use the sizegrip widget.
 
-if utils.WIN:
+if utils.WIN or not utils.MAC and utils.LINUX:
     EVENTS = {
         'LEFT': '<Button-1>',
         'LEFT_DOUBLE': '<Double-Button-1>',
@@ -139,22 +139,6 @@ elif utils.MAC:
         'RIGHT_SHIFT': '<Shift-Button-2>',
         'RIGHT_RELEASE': '<ButtonRelease-2>',
         'RIGHT_MOVE': '<B2-Motion>',
-    }
-elif utils.LINUX:
-    EVENTS = {
-        'LEFT': '<Button-1>',
-        'LEFT_DOUBLE': '<Double-Button-1>',
-        'LEFT_CTRL': '<Control-Button-1>',
-        'LEFT_SHIFT': '<Shift-Button-1>',
-        'LEFT_RELEASE': '<ButtonRelease-1>',
-        'LEFT_MOVE': '<B1-Motion>',
-
-        'RIGHT': '<Button-3>',
-        'RIGHT_DOUBLE': '<Double-Button-3>',
-        'RIGHT_CTRL': '<Control-Button-3>',
-        'RIGHT_SHIFT': '<Shift-Button-3>',
-        'RIGHT_RELEASE': '<ButtonRelease-3>',
-        'RIGHT_MOVE': '<B3-Motion>',
     }
 else:
     raise AssertionError
@@ -275,7 +259,7 @@ def bind_mousewheel(
             widget.bind('<Button-4>', scroll_up, add=True)
             widget.bind('<Button-5>', scroll_down, add=True)
     else:
-        raise AssertionError('Unknown platform ' + sys.platform)
+        raise AssertionError(f'Unknown platform {sys.platform}')
 
 
 @overload
@@ -289,7 +273,7 @@ def add_mousewheel(target: Union[tk.XView, tk.YView], *frames: tk.Misc, orient: 
     Toplevel objects.
     Set orient to 'x' or 'y'.
     """
-    scroll_func = getattr(target, orient + 'view_scroll')
+    scroll_func = getattr(target, f'{orient}view_scroll')
     # Call view_scroll(delta, "units").
     bind_mousewheel(frames, scroll_func, ('units', ))
 
@@ -565,7 +549,7 @@ class HidingScroll(ttk.Scrollbar):
     """
     def set(self, low: float, high: float) -> None:
         """Set the size needed for the scrollbar, and hide/show if needed."""
-        if float(low) <= 0.0 and float(high) >= 1.0:
+        if low <= 0.0 and high >= 1.0:
             # Remove this, but remember gridding options
             self.grid_remove()
         else:
@@ -709,8 +693,7 @@ class FileField(ttk.Frame):
 
     def browse(self, event: tk.Event = None) -> None:
         """Browse for a file."""
-        path = self.browser.show()
-        if path:
+        if path := self.browser.show():
             self.value = path
 
     @staticmethod  # No need to bind to a method.
@@ -743,10 +726,7 @@ class FileField(ttk.Frame):
         if not self.is_dir:
             path = os.path.basename(path)
 
-        if len(path) > wid + 2:
-            return '...' + path[-(wid - 1):]
-        else:
-            return path
+        return f'...{path[-(wid - 1):]}' if len(path) > wid + 2 else path
 
     def _text_configure(self, e: tk.Event) -> None:
         """Truncate text every time the text widget resizes."""

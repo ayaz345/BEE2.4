@@ -159,12 +159,11 @@ def make_desc(packset: PackagesSet, var: StyleVar) -> TransToken:
                 n=len(style_list),
             )
 
-    res = TRANS_TOOLTIP.format(
+    return TRANS_TOOLTIP.format(
         desc=var.desc,
         defaults=TRANS_DEFAULT[var.default],
         styles=style_desc,
     )
-    return res
 
 
 def refresh(selected_style: Style) -> None:

@@ -136,10 +136,9 @@ class ConfigFile(ConfigParser):
             self[section] = {}
         if value in self[section]:
             return self[section][value]
-        else:
-            self.has_changed.set()
-            self[section][value] = default
-            return default
+        self.has_changed.set()
+        self[section][value] = default
+        return default
 
     def __getitem__(self, section: str) -> SectionProxy:
         """Allows setting/getting config[section][value]."""
@@ -166,7 +165,7 @@ class ConfigFile(ConfigParser):
 
     get_bool = getboolean
 
-    def getint(self, section: str, value: str, default: int=0, **kwargs) -> int:  # type: ignore[override]
+    def getint(self, section: str, value: str, default: int=0, **kwargs) -> int:    # type: ignore[override]
         """Get the value in the specified section, coercing to a Integer.
 
             If either does not exist, set to the default and return it.
@@ -177,7 +176,7 @@ class ConfigFile(ConfigParser):
             return super().getint(section, value, **kwargs)
         except (ValueError, NoOptionError):
             self.has_changed.set()
-            self[section][value] = str(int(default))
+            self[section][value] = str(default)
             return default
 
     get_int = getint

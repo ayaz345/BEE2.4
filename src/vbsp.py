@@ -160,11 +160,9 @@ async def load_settings() -> Tuple[
         for var in stylevar_block:
             settings['style_vars'][var.name.casefold()] = srctools.conv_bool(var.value)
 
-    # Load a copy of the item configuration.
-    id_to_item: dict[str, editoritems.Item] = {}
-    for item in res_editor():
-        id_to_item[item.id.casefold()] = item
-
+    id_to_item: dict[str, editoritems.Item] = {
+        item.id.casefold(): item for item in res_editor()
+    }
     # Send that data to the relevant modules.
     instanceLocs.load_conf(id_to_item.values())
     connections.read_configs(id_to_item.values())
@@ -289,7 +287,7 @@ def anti_fizz_bump(vmf: VMF) -> None:
         fizz_name = cleanser['targetname']
         if fizz_name.endswith('_brush'):
             # Fizzlers will be changed to this in fix_func_brush()
-            fizz_name = fizz_name[:-6] + '-br_brush'
+            fizz_name = f'{fizz_name[:-6]}-br_brush'
 
         # Only have 1 bumper per brush
         if fizz_name not in bumpers:
@@ -378,7 +376,7 @@ def set_player_model(vmf: VMF, info: corridor.Info) -> None:
     vmf.create_ent(
         classname='comp_precache_model',
         origin=loc,
-        model='models/' + model_path + '.mdl',
+        model=f'models/{model_path}.mdl',
     )
 
     auto = vmf.create_ent(
@@ -389,22 +387,26 @@ def set_player_model(vmf: VMF, info: corridor.Info) -> None:
 
     # The delay is required to ensure the portalgun parents properly
     # to the player's hand.
-    auto.add_out(Output(
-        'OnMapSpawn',
-        '@command',
-        'Command',
-        'setmodel ' + model_path,
-        delay=0.1,
-    ))
+    auto.add_out(
+        Output(
+            'OnMapSpawn',
+            '@command',
+            'Command',
+            f'setmodel {model_path}',
+            delay=0.1,
+        )
+    )
 
     # We need to redo this whenever a saved game is loaded..
-    auto.add_out(Output(
-        'OnLoadGame',
-        '@command',
-        'Command',
-        'setmodel ' + model_path,
-        delay=0.1,
-    ))
+    auto.add_out(
+        Output(
+            'OnLoadGame',
+            '@command',
+            'Command',
+            f'setmodel {model_path}',
+            delay=0.1,
+        )
+    )
 
     if pgun_skin and options.get(str, 'game_id') == utils.STEAM_IDS['PORTAL2']:
         # Only change portalgun skins in Portal 2 - this is the vanilla
@@ -536,14 +538,10 @@ def set_player_portalgun(vmf: VMF, info: corridor.Info) -> None:
 
         # Detect the group ID of portals placed in the map, and write to
         # the entities what we determine.
-        if info.is_coop:
-            port_ids = (0, 1, 2)
-        else:
-            port_ids = (0, )
-
+        port_ids = (0, 1, 2) if info.is_coop else (0, )
         for port_id in port_ids:
             trigger_portal = vmf.create_ent(
-                targetname='__pgun_port_detect_{}'.format(port_id),
+                targetname=f'__pgun_port_detect_{port_id}',
                 classname='func_portal_detector',
                 origin=ent_pos,
                 CheckAllIDs=0,
@@ -555,17 +553,13 @@ def set_player_portalgun(vmf: VMF, info: corridor.Info) -> None:
                     'OnStartTouchPortal1',
                     '!activator',
                     'RunScriptCode',
-                    '__pgun_is_oran <- 0; '
-                    '__pgun_port_id <- {}; '
-                    '__pgun_active <- 1'.format(port_id),
+                    f'__pgun_is_oran <- 0; __pgun_port_id <- {port_id}; __pgun_active <- 1',
                 ),
                 Output(
                     'OnStartTouchPortal2',
                     '!activator',
                     'RunScriptCode',
-                    '__pgun_is_oran <- 1; '
-                    '__pgun_port_id <- {}; '
-                    '__pgun_active <- 1'.format(port_id),
+                    f'__pgun_is_oran <- 1; __pgun_port_id <- {port_id}; __pgun_active <- 1',
                 ),
                 Output(
                     'OnEndTouchPortal',
@@ -595,18 +589,16 @@ def set_player_portalgun(vmf: VMF, info: corridor.Info) -> None:
             ))
 
         if info.is_sp:
-            logic_auto.add_out(Output(
-                'OnMapSpawn',
-                '@portalgun',
-                'RunScriptCode',
-                'init({}, {}, {})'.format(
-                    'true' if blue_portal else 'false',
-                    'true' if oran_portal else 'false',
-                    'true' if has_btn_onoff else 'false',
-                ),
-                delay=0.1,
-                only_once=True,
-            ))
+            logic_auto.add_out(
+                Output(
+                    'OnMapSpawn',
+                    '@portalgun',
+                    'RunScriptCode',
+                    f"init({'true' if blue_portal else 'false'}, {'true' if oran_portal else 'false'}, {'true' if has_btn_onoff else 'false'})",
+                    delay=0.1,
+                    only_once=True,
+                )
+            )
 
         # Shuts down various parts when you've reached the exit.
         import precomp.conditions.instances
@@ -808,9 +800,9 @@ def set_elev_videos(vmf: VMF, info: corridor.Info) -> None:
         if inst['file'].casefold() not in transition_ents:
             continue
         if vert_vid:
-            inst.fixup[consts.FixupVars.BEE_ELEV_VERT] = 'media/' + vert_vid + '.bik'
+            inst.fixup[consts.FixupVars.BEE_ELEV_VERT] = f'media/{vert_vid}.bik'
         if horiz_vid:
-            inst.fixup[consts.FixupVars.BEE_ELEV_HORIZ] = 'media/' + horiz_vid + '.bik'
+            inst.fixup[consts.FixupVars.BEE_ELEV_HORIZ] = f'media/{horiz_vid}.bik'
 
         # Create the video script
         vmf.create_ent(
@@ -1339,10 +1331,7 @@ def run_vbsp(
 
     is_peti = new_path is not None
 
-    # We can't overwrite the original vmf, so we run VBSP from a separate
-    # location.
     if is_peti:
-        # Copy the original log file
         if os.path.isfile(path.replace(".vmf", ".log")):
             shutil.copy(
                 path.replace(".vmf", ".log"),
@@ -1375,10 +1364,9 @@ def run_vbsp(
         if os.path.isfile(pointfile):  # We leaked!
             points = []
             with open(pointfile) as f:
-                for line in f:
-                    points.append(Vec.from_str(line.strip()))
+                points.extend(Vec.from_str(line.strip()) for line in f)
             # Preserve this, rename to match the error map we generate.
-            os.replace(pointfile, pointfile[:-4] + ".error.lin")
+            os.replace(pointfile, f"{pointfile[:-4]}.error.lin")
             raise errors.UserError(errors.TOK_VBSP_LEAK, leakpoints=points)
 
     if code != 0:
@@ -1453,7 +1441,7 @@ def process_vbsp_log(output: str) -> None:
     count_section = BEE2_config['Counts']
     for count_name, (value, limit) in counts.items():
         count_section[count_name] = value
-        count_section['max_' + count_name] = limit
+        count_section[f'max_{count_name}'] = limit
     BEE2_config.save()
 
 
@@ -1562,12 +1550,11 @@ async def main() -> None:
     skip_vbsp = False
     for i, a in enumerate(new_args):
         # We need to strip these out, otherwise VBSP will get confused.
-        if a == '-force_peti' or a == '-force_hammer':
+        if a in ['-force_peti', '-force_hammer']:
             new_args[i] = ''
             old_args[i] = ''
         elif a == '-skip_vbsp':  # Debug command, for skipping.
             skip_vbsp = True
-        # Strip the entity limit, and the following number
         elif a == '-entity_limit':
             new_args[i] = ''
             if len(new_args) > i+1 and new_args[i+1] == '1750':
@@ -1575,21 +1562,19 @@ async def main() -> None:
         elif a == '-game':
             game_dir = new_args[i+1]
 
-    LOGGER.info('Map path is "' + path + '"')
-    LOGGER.info('New path: "' + new_path + '"')
+    LOGGER.info(f'Map path is "{path}"')
+    LOGGER.info(f'New path: "{new_path}"')
     if not path:
         raise Exception("No map passed!")
     if not game_dir:
         raise Exception("No game directory passed!")
 
-    if '-force_peti' in args or '-force_hammer' in args:
-        # we have override command!
-        if '-force_peti' in args:
-            LOGGER.warning('OVERRIDE: Attempting to convert!')
-            is_hammer = False
-        else:
-            LOGGER.warning('OVERRIDE: Abandoning conversion!')
-            is_hammer = True
+    if '-force_peti' in args:
+        LOGGER.warning('OVERRIDE: Attempting to convert!')
+        is_hammer = False
+    elif '-force_hammer' in args:
+        LOGGER.warning('OVERRIDE: Abandoning conversion!')
+        is_hammer = True
     else:
         # If we don't get the special -force args, check for the entity
         # limit to determine if we should convert
@@ -1697,11 +1682,8 @@ async def main() -> None:
         LOGGER.error('"User" error detected, aborting compile: ', exc_info=True)
 
         # Try to preserve the current map.
-        try:
-            save(vmf, new_path[:-4] + '.error.vmf')  # noqa
-        except Exception:
-            pass
-
+        with contextlib.suppress(Exception):
+            save(vmf, f'{new_path[:-4]}.error.vmf')
         vmf = errors.make_map(error)
 
         # Flag as preview and errored for VRAD.

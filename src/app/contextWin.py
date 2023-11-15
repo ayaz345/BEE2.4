@@ -119,7 +119,7 @@ TRANS_NO_VERSIONS = TransToken.ui('No Alternate Versions')
 def set_sprite(pos: SPR, sprite: str) -> None:
     """Set one of the property sprites to a value."""
     widget = wid_sprite[pos]
-    img.apply(widget, img.Handle.sprite('icons/' + sprite, 32, 32))
+    img.apply(widget, img.Handle.sprite(f'icons/{sprite}', 32, 32))
     tooltip.set_tooltip(widget, SPRITE_TOOL[sprite])
 
 
@@ -136,10 +136,7 @@ def pos_for_item(ind: int) -> int | None:
 def ind_for_pos(pos: int) -> int | None:
     """Return the subtype index for the specified position."""
     ind = SUBITEM_POS[len(selected_item.visual_subtypes)][pos]
-    if ind == -1:
-        return None
-    else:
-        return selected_item.visual_subtypes[ind]
+    return None if ind == -1 else selected_item.visual_subtypes[ind]
 
 
 def hide_item_props(vals) -> None:
@@ -286,16 +283,30 @@ def load_item_data() -> None:
                 heading = f'\nInstances ({editor.id}):\n'
             inst_desc.append(tkMarkdown.TextSegment(heading, (tkMarkdown.TextTag.BOLD, )))
             for ind, inst in enumerate(editor.instances):
-                inst_desc.append(tkMarkdown.TextSegment(f'{ind}: ', (tkMarkdown.TextTag.INDENT, )))
-                inst_desc.append(
-                    tkMarkdown.TextSegment(f'{inst.inst}\n', (tkMarkdown.TextTag.CODE, ))
-                    if inst.inst != FSPath() else tkMarkdown.TextSegment('""\n')
+                inst_desc.extend(
+                    (
+                        tkMarkdown.TextSegment(
+                            f'{ind}: ', (tkMarkdown.TextTag.INDENT,)
+                        ),
+                        tkMarkdown.TextSegment(
+                            f'{inst.inst}\n', (tkMarkdown.TextTag.CODE,)
+                        )
+                        if inst.inst != FSPath()
+                        else tkMarkdown.TextSegment('""\n'),
+                    )
                 )
             for name, inst_path in editor.cust_instances.items():
-                inst_desc.append(tkMarkdown.TextSegment(f'"{name}": ', (tkMarkdown.TextTag.INDENT, )))
-                inst_desc.append(
-                    tkMarkdown.TextSegment(f'{inst_path}\n', (tkMarkdown.TextTag.CODE, ))
-                    if inst_path != FSPath() else tkMarkdown.TextSegment('""\n')
+                inst_desc.extend(
+                    (
+                        tkMarkdown.TextSegment(
+                            f'"{name}": ', (tkMarkdown.TextTag.INDENT,)
+                        ),
+                        tkMarkdown.TextSegment(
+                            f'{inst_path}\n', (tkMarkdown.TextTag.CODE,)
+                        )
+                        if inst_path != FSPath()
+                        else tkMarkdown.TextSegment('""\n'),
+                    )
                 )
         desc = tkMarkdown.join(desc, tkMarkdown.SingleMarkdown(inst_desc))
 

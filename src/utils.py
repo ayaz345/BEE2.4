@@ -140,10 +140,7 @@ def conf_location(path: str) -> Path:
 
     loc = _SETTINGS_ROOT / path
 
-    if path.endswith(('\\', '/')) and not loc.suffix:
-        folder = loc
-    else:
-        folder = loc.parent
+    folder = loc if path.endswith(('\\', '/')) and not loc.suffix else loc.parent
     # Create folders if needed.
     folder.mkdir(parents=True, exist_ok=True)
     return loc
@@ -255,10 +252,7 @@ def freeze_enum_props(cls: Type[EnumT]) -> Type[EnumT]:
                 raise ValueError(f'{cls}.{name} raised exception! Add this to the above clause!') from exc
             else:
                 data[enum] = res
-        if data_exc:
-            func = _exc_freeze(data, data_exc)
-        else:  # If we don't raise, we can use this C function directly.
-            func = data.get
+        func = _exc_freeze(data, data_exc) if data_exc else data.get
         setattr(cls, name, property(fget=func, doc=value.__doc__))
     return cls
 
@@ -434,10 +428,7 @@ class PackagePath:
         """Parse a string into a path. If a package isn't provided, the default is used."""
         if isinstance(uri, PackagePath):
             return uri
-        if ':' in uri:
-            return cls(*uri.split(':', 1))
-        else:
-            return cls(def_package, uri)
+        return cls(*uri.split(':', 1)) if ':' in uri else cls(def_package, uri)
 
     def __str__(self) -> str:
         return f'{self.package}:{self.path}'
