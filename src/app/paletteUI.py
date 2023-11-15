@@ -225,7 +225,7 @@ class PaletteUI:
                     image=gear_img,
                     compound='left',
                 )
-                pal_id = 'pal_' + pal.uuid.hex
+                pal_id = f'pal_{pal.uuid.hex}'
                 if pal_id in existing:
                     existing.remove(pal_id)
                     self.ui_treeview.move(pal_id, grp_tree, 99999)
@@ -236,9 +236,10 @@ class PaletteUI:
                     )
                 else:  # New
                     self.ui_treeview.insert(
-                        grp_tree, 'end',
+                        grp_tree,
+                        'end',
                         text=str(pal.name),
-                        iid='pal_' + pal.uuid.hex,
+                        iid=f'pal_{pal.uuid.hex}',
                         image=gear_img,
                         tags=TREE_TAG_PALETTES,
                     )
@@ -247,8 +248,8 @@ class PaletteUI:
             self.ui_treeview.delete(*existing)
 
         # Select the currently selected UUID.
-        self.ui_treeview.selection_set('pal_' + self.selected.uuid.hex)
-        self.ui_treeview.see('pal_' + self.selected.uuid.hex)
+        self.ui_treeview.selection_set(f'pal_{self.selected.uuid.hex}')
+        self.ui_treeview.see(f'pal_{self.selected.uuid.hex}')
 
         if self.selected.readonly:
             self.ui_menu.entryconfigure(
@@ -406,6 +407,6 @@ class PaletteUI:
     def treeview_reselect(self) -> None:
         """When a group item is selected on the tree, reselect the palette."""
         # This could be called before all the items are added to the UI.
-        uuid_hex = 'pal_' + self.selected.uuid.hex
+        uuid_hex = f'pal_{self.selected.uuid.hex}'
         if self.ui_treeview.exists(uuid_hex):
             self.ui_treeview.selection_set(uuid_hex)

@@ -95,9 +95,7 @@ def in_bbox(
     """Checks if (x, y) is inside the (left, top, width, height) bbox."""
     if x < left or y < top:
         return False
-    if x > left + width or y > top + height:
-        return False
-    return True
+    return x <= left + width and y <= top + height
 
 
 class Positioner:
@@ -126,9 +124,7 @@ class Positioner:
         self.height = canvas.winfo_height()
 
         self.columns = (self.width - spacing) // self.item_width
-        if self.columns < 1:
-            # Can't fit, they're going to stick out.
-            self.columns = 1
+        self.columns = max(self.columns, 1)
 
     def xpos(self, col: int) -> int:
         """Return the x offset of a column"""
@@ -451,19 +447,16 @@ class Manager(Generic[ItemT]):
             # We aren't dragging, ignore the event.
             return
 
-        self._drag_win.geometry('+{}+{}'.format(
-            event.x_root - self.width // 2,
-            event.y_root - self.height // 2,
-        ))
+        self._drag_win.geometry(
+            f'+{event.x_root - self.width // 2}+{event.y_root - self.height // 2}'
+        )
 
         dest = self._pos_slot(event.x_root, event.y_root)
 
-        if dest:
+        if dest or not self._cur_slot.is_source and self._cur_slot.is_flexi:
             self._drag_win['cursor'] = tk_tools.Cursors.MOVE_ITEM
         elif self._cur_slot.is_source:
             self._drag_win['cursor'] = tk_tools.Cursors.INVALID_DRAG
-        elif self._cur_slot.is_flexi:  # If it's a flexi slot, it's going back.
-            self._drag_win['cursor'] = tk_tools.Cursors.MOVE_ITEM
         else:
             self._drag_win['cursor'] = tk_tools.Cursors.DESTROY_ITEM
 
@@ -626,7 +619,7 @@ class Slot(Generic[ItemT]):
     @highlight.setter
     def highlight(self, value: bool) -> None:
         """Allows setting/getting if the slot has an alternate selection state."""
-        self._is_highlighted = bool(value)
+        self._is_highlighted = value
         self._lbl['background'] = (
             '#5AD2D2' if self._is_highlighted else ''
         )
@@ -725,7 +718,7 @@ class Slot(Generic[ItemT]):
             obj_id, _, _ = self._canv_info
             canv.delete(obj_id)
         else:
-            getattr(self._lbl, self._pos_type.value + '_forget')()
+            getattr(self._lbl, f'{self._pos_type.value}_forget')()
         self._pos_type = None
         self._canv_info = None
 
@@ -755,14 +748,13 @@ class Slot(Generic[ItemT]):
                     # It's already on the board, don't change anything.
                     sound.fx('config')
                     return
-            # Failed.
-            sound.fx('delete')
-        # Else: target.
         else:
             # Fast-delete this.
             self.contents = None
             background_run(self.man.event_bus, Event.MODIFIED)
-            sound.fx('delete')
+
+        # Failed.
+        sound.fx('delete')
 
     def _evt_hover_enter(self, event: tkinter.Event) -> None:
         """Fired when the cursor starts hovering over the item."""
@@ -922,7 +914,7 @@ async def test() -> None:
 
     async def evt_enter(evt_slot: Slot[TestItem]) -> None:
         if evt_slot.contents is not None:
-            name_lbl['text'] = 'Name: ' + evt_slot.contents.name
+            name_lbl['text'] = f'Name: {evt_slot.contents.name}'
 
     async def evt_exit(evt_slot: Slot[TestItem]) -> None:
         name_lbl['text'] = ''

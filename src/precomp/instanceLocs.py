@@ -304,16 +304,15 @@ def resolve(path: str, silent: bool=False) -> List[str]:
     If silent is True, no error messages will be output (for use with hardcoded
     names).
     """
-    if silent:
-        # Ignore messages < ERROR (warning and info)
-        log_level = LOGGER.level
-        LOGGER.setLevel(logging.ERROR)
-        try:
-            return _resolve(path)
-        finally:
-            LOGGER.setLevel(log_level)
-    else:
+    if not silent:
         return _resolve(path)
+    # Ignore messages < ERROR (warning and info)
+    log_level = LOGGER.level
+    LOGGER.setLevel(logging.ERROR)
+    try:
+        return _resolve(path)
+    finally:
+        LOGGER.setLevel(log_level)
 
 Default_T = TypeVar('Default_T')
 
@@ -346,42 +345,39 @@ def _resolve(path: str) -> List[str]:
     """Use a secondary function to allow caching values, while ignoring the
     'silent' parameter.
     """
-    groups = _RE_DEFS.findall(path)
-    if groups:
-        out = []
-        for group in groups:
-            if group[0] == '<':
-                try:
-                    item_id, subitems = _RE_SUBITEMS.fullmatch(group).groups()
-                except (ValueError, AttributeError):  # None.groups fail
-                    LOGGER.warning('Could not parse instance lookup "{}"!', group)
-                    return []
-
-                item_id = item_id.casefold()
-                try:
-                    item_inst = INSTANCE_FILES[item_id]
-                except KeyError:
-                    LOGGER.warning('"{}" is not a valid item!', item_id)
-                    return []
-                if subitems:
-                    out.extend(get_subitems(subitems, item_inst, item_id))
-                else:
-                    # It's just the <item_id>, return all the values
-                    out.extend(item_inst)
-
-            elif group[0] == '[':
-                special_name = group[1:-1].casefold()
-                try:
-                    out.extend(INST_SPECIAL[special_name])
-                except KeyError:
-                    LOGGER.warning('"{}" is not a valid instance category!', special_name)
-                    continue
-            else:
-                raise Exception(group)
-        # Remove "" from the output.
-        return list(filter(None, out))
-    else:
+    if not (groups := _RE_DEFS.findall(path)):
         return [path.casefold()]
+    out = []
+    for group in groups:
+        if group[0] == '<':
+            try:
+                item_id, subitems = _RE_SUBITEMS.fullmatch(group).groups()
+            except (ValueError, AttributeError):  # None.groups fail
+                LOGGER.warning('Could not parse instance lookup "{}"!', group)
+                return []
+
+            item_id = item_id.casefold()
+            try:
+                item_inst = INSTANCE_FILES[item_id]
+            except KeyError:
+                LOGGER.warning('"{}" is not a valid item!', item_id)
+                return []
+            if subitems:
+                out.extend(get_subitems(subitems, item_inst, item_id))
+            else:
+                # It's just the <item_id>, return all the values
+                out.extend(item_inst)
+
+        elif group[0] == '[':
+            special_name = group[1:-1].casefold()
+            try:
+                out.extend(INST_SPECIAL[special_name])
+            except KeyError:
+                LOGGER.warning('"{}" is not a valid instance category!', special_name)
+        else:
+            raise Exception(group)
+    # Remove "" from the output.
+    return list(filter(None, out))
 
 
 def get_subitems(comma_list: str, item_inst: List[str], item_id: str) -> List[str]:
@@ -412,15 +408,15 @@ def get_subitems(comma_list: str, item_inst: List[str], item_id: str) -> List[st
                 ind = int(folded_value)
             except ValueError:
                 LOGGER.info('--------\nValid subitems:')
-                LOGGER.info('\n'.join(
-                    ('> ' + k + ' = ' + str(v))
-                    for k, v in
-                    SUBITEMS.items()
-                ))
+                LOGGER.info(
+                    '\n'.join(f'> {k} = {str(v)}' for k, v in SUBITEMS.items())
+                )
                 LOGGER.info('--------')
                 raise Exception(
-                    '"' + val + '" is not a valid instance'
-                                ' subtype or index!'
+                    (
+                        f'"{val}' + '" is not a valid instance'
+                        ' subtype or index!'
+                    )
                 )
         # SUBITEMS has tuple values, which represent multiple sub-items.
         if isinstance(ind, tuple):
@@ -461,7 +457,7 @@ def get_special_inst(name: str):
     try:
         inst = INST_SPECIAL[name.casefold()]
     except KeyError:
-        raise KeyError("Invalid special instance name! ({})".format(name))
+        raise KeyError(f"Invalid special instance name! ({name})")
 
     # The number you'll get is fixed, so it's fine if we return different
     # types.

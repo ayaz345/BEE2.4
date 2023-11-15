@@ -188,7 +188,7 @@ class GroupHeader(tk_tools.LineHeader):
     @visible.setter
     def visible(self, value: bool) -> None:
         """Set if the contents are visible."""
-        value = bool(value)
+        value = value
         if value == self._visible:
             return  # Don't do anything..
 

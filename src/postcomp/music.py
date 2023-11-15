@@ -251,10 +251,10 @@ def generate(bsp: VMF, pack_list: PackList) -> None:
 
         track = []
         for i in itertools.count(1):
-            snd = conf_ent[f'track{i:02}']
-            if not snd:
+            if snd := conf_ent[f'track{i:02}']:
+                track.append(snd)
+            else:
                 break
-            track.append(snd)
         if track:
             tracks[channel] = track
 
@@ -349,7 +349,7 @@ def write_sound(
                     sndchar=snd_prefix,
                 )
             )
-            pack_list.pack_file('sound/' + snd.casefold())
+            pack_list.pack_file(f'sound/{snd.casefold()}')
         file.write('\t}\n')
     else:
         file.write(
@@ -358,4 +358,4 @@ def write_sound(
                 sndchar=snd_prefix,
             )
         )
-        pack_list.pack_file('sound/' + snds[0].casefold())
+        pack_list.pack_file(f'sound/{snds[0].casefold()}')

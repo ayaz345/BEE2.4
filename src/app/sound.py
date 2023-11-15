@@ -106,7 +106,7 @@ class PygletSound(NullSound):
         """Load the given UI sound into a source."""
         global sounds
         fname = SOUNDS[name]
-        path = str(utils.install_path('sounds/{}.ogg'.format(fname)))
+        path = str(utils.install_path(f'sounds/{fname}.ogg'))
         LOGGER.info('Loading sound "{}" -> {}', name, path)
         try:
             src: pyglet.media.Source = await trio.to_thread.run_sync(functools.partial(
@@ -147,9 +147,8 @@ class PygletSound(NullSound):
             duration = snd.duration
             if duration is not None:
                 return duration
-            else:
-                LOGGER.warning('No duration: {}', sound)
-                return 0.75  # Should be long enough.
+            LOGGER.warning('No duration: {}', sound)
+            return 0.75  # Should be long enough.
 
 
 async def sound_task() -> None:
@@ -215,7 +214,9 @@ def play_fx() -> bool:
 
 if utils.WIN and not utils.FROZEN:
     # Add a libs folder for FFmpeg dlls.
-    os.environ['PATH'] = f'{utils.install_path("lib-" + utils.BITNESS).absolute()};{os.environ["PATH"]}'
+    os.environ[
+        'PATH'
+    ] = f'{utils.install_path(f"lib-{utils.BITNESS}").absolute()};{os.environ["PATH"]}'
 
 sounds: NullSound
 try:

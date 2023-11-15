@@ -149,10 +149,10 @@ class SelitemData:
 
     def iter_trans_tokens(self, source: str) -> Iterator[TransTokenSource]:
         """Yield the tokens in this data."""
-        yield self.name, source + '.long_name'
-        yield self.short_name, source + '.short_name'
-        yield self.group, source + '.group'
-        yield from tkMarkdown.iter_tokens(self.desc, source + '.desc')
+        yield (self.name, f'{source}.long_name')
+        yield (self.short_name, f'{source}.short_name')
+        yield (self.group, f'{source}.group')
+        yield from tkMarkdown.iter_tokens(self.desc, f'{source}.desc')
 
 
 @attrs.define
@@ -413,13 +413,13 @@ class PackagesSet:
     def all_obj(self, cls: Type[PakT]) -> Collection[PakT]:
         """Get the list of objects parsed."""
         if cls not in self._parsed:
-            raise ValueError(cls.__name__ + ' has not been parsed yet!')
+            raise ValueError(f'{cls.__name__} has not been parsed yet!')
         return cast('Collection[PakT]', self.objects[cls].values())
 
     def obj_by_id(self, cls: Type[PakT], object_id: str) -> PakT:
         """Return the object with a given ID."""
         if cls not in self._parsed:
-            raise ValueError(cls.__name__ + ' has not been parsed yet!')
+            raise ValueError(f'{cls.__name__} has not been parsed yet!')
         return cast(PakT, self.objects[cls][object_id.casefold()])
 
     def add(self, obj: PakT, pak_id: str, pak_name: str) -> None:
@@ -672,7 +672,7 @@ async def parse_package(
                 try:
                     obj_id = over_prop['id']
                 except LookupError:
-                    raise ValueError('No ID for "{}" object type!'.format(obj_type)) from None
+                    raise ValueError(f'No ID for "{obj_type}" object type!') from None
                 packset.overrides[obj_type, obj_id.casefold()].append(
                     ParseData(pack.fsys, obj_id, over_prop, pack.id, True)
                 )
@@ -685,17 +685,18 @@ async def parse_package(
             try:
                 obj_id = obj['id']
             except LookupError:
-                raise ValueError('No ID for "{}" object type in "{}" package!'.format(obj_type, pack.id)) from None
+                raise ValueError(
+                    f'No ID for "{obj_type}" object type in "{pack.id}" package!'
+                ) from None
             if obj_id in packset.unparsed[obj_type]:
-                if obj_type.allow_mult:
-                    # Pretend this is an override
-                    packset.overrides[obj_type, obj_id.casefold()].append(
-                        ParseData(pack.fsys, obj_id, obj, pack.id, True)
-                    )
-                    # Don't continue to parse and overwrite
-                    continue
-                else:
-                    raise Exception('ERROR! "' + obj_id + '" defined twice!')
+                if not obj_type.allow_mult:
+                    raise Exception(f'ERROR! "{obj_id}" defined twice!')
+                # Pretend this is an override
+                packset.overrides[obj_type, obj_id.casefold()].append(
+                    ParseData(pack.fsys, obj_id, obj, pack.id, True)
+                )
+                # Don't continue to parse and overwrite
+                continue
             packset.unparsed[obj_type][obj_id] = ObjData(
                 pack.fsys,
                 obj,
@@ -747,9 +748,7 @@ async def parse_object(
         ) from e
 
     if not hasattr(object_, 'id'):
-        raise ValueError(
-            '"{}" object {} has no ID!'.format(obj_class.__name__, object_)
-        )
+        raise ValueError(f'"{obj_class.__name__}" object {object_} has no ID!')
     assert object_.id == obj_id, f'{object_!r} -> {object_.id} != "{obj_id}"!'
 
     object_.pak_id = obj_data.pak_id
@@ -933,7 +932,7 @@ class Style(PakObject, needs_foreground=True):
                 prop = group_prop.find_key(str(i), '')
 
                 if icon_folder:
-                    icon = utils.PackagePath(data.pak_id, 'corr/{}/{}/{}.jpg'.format(icon_folder, group, i))
+                    icon = utils.PackagePath(data.pak_id, f'corr/{icon_folder}/{group}/{i}.jpg')
                 else:
                     icon = img.PATH_BLANK
 
@@ -955,19 +954,16 @@ class Style(PakObject, needs_foreground=True):
         try:
             folder = 'styles/' + info['folder']
         except LookupError:
-            # It's OK for override styles to be missing their 'folder'
-            # value.
-            if data.is_override:
-                items = []
-                renderables = {}
-                vbsp = lazy_conf.BLANK
-            else:
+            if not data.is_override:
                 raise ValueError(f'Style "{data.id}" missing configuration folder!')
+            items = []
+            renderables = {}
+            vbsp = lazy_conf.BLANK
         else:
-            with data.fsys[folder + '/items.txt'].open_str() as f:
+            with data.fsys[f'{folder}/items.txt'].open_str() as f:
                 items, renderables = await trio.to_thread.run_sync(EditorItem.parse, f)
             vbsp = lazy_conf.from_file(
-                utils.PackagePath(data.pak_id, folder + '/vbsp_config.cfg'),
+                utils.PackagePath(data.pak_id, f'{folder}/vbsp_config.cfg'),
                 missing_ok=True,
                 source=f'Style <{data.id}>',
             )
@@ -1016,7 +1012,7 @@ class Style(PakObject, needs_foreground=True):
                 # Recursively find all the base styles for this one.
                 if b_style in base:
                     # Already hit this!
-                    raise Exception('Loop in bases for "{}"!'.format(b_style.id))
+                    raise Exception(f'Loop in bases for "{b_style.id}"!')
                 # Just append the style.base_style to the list,
                 # until the style with that ID isn't found any more.
                 base.append(b_style)
@@ -1037,7 +1033,7 @@ class Style(PakObject, needs_foreground=True):
 
     def iter_trans_tokens(self) -> Iterator[TransTokenSource]:
         """Iterate over translation tokens in the style."""
-        return self.selitem_data.iter_trans_tokens('styles/' + self.id)
+        return self.selitem_data.iter_trans_tokens(f'styles/{self.id}')
 
     @staticmethod
     def export(exp_data: ExportData) -> None:
@@ -1076,7 +1072,7 @@ def sep_values(string: str, delimiters: Iterable[str] = ',;/') -> list[str]:
     Multiple delimiter characters can be passed.
     """
     delim, *extra_del = delimiters
-    if string == '':
+    if not string:
         return []
 
     for extra in extra_del:

@@ -154,21 +154,25 @@ class CorridorGroup(packages.PakObject, allow_mult=True):
             except LookupError:
                 name = TRANS_CORRIDOR_GENERIC
 
-            corridors[mode, direction, orient].append(CorridorUI(
-                instance=prop['instance'],
-                name=name,
-                authors=packages.sep_values(prop['authors', '']),
-                desc=packages.desc_parse(prop, 'Corridor', data.pak_id),
-                orig_index=prop.int('DefaultIndex', 0),
-                config=packages.get_config(prop, 'items', data.pak_id, source='Corridor ' + prop.name),
-                images=images,
-                dnd_icon=icon,
-                legacy=is_legacy,
-                fixups={
-                    subprop.name: subprop.value
-                    for subprop in prop.find_children('fixups')
-                },
-            ))
+            corridors[mode, direction, orient].append(
+                CorridorUI(
+                    instance=prop['instance'],
+                    name=name,
+                    authors=packages.sep_values(prop['authors', '']),
+                    desc=packages.desc_parse(prop, 'Corridor', data.pak_id),
+                    orig_index=prop.int('DefaultIndex', 0),
+                    config=packages.get_config(
+                        prop, 'items', data.pak_id, source=f'Corridor {prop.name}'
+                    ),
+                    images=images,
+                    dnd_icon=icon,
+                    legacy=is_legacy,
+                    fixups={
+                        subprop.name: subprop.value
+                        for subprop in prop.find_children('fixups')
+                    },
+                )
+            )
         return CorridorGroup(data.id, dict(corridors))
 
     def add_over(self: CorridorGroup, override: CorridorGroup) -> None:
@@ -295,8 +299,8 @@ class CorridorGroup(packages.PakObject, allow_mult=True):
         for (mode, direction, orient), corridors in self.corridors.items():
             source = f'corridors/{self.id}.{mode.value}_{direction.value}_{orient.value}'
             for corr in corridors:
-                yield corr.name, source + '.name'
-                yield from tkMarkdown.iter_tokens(corr.desc, source + '.desc')
+                yield (corr.name, f'{source}.name')
+                yield from tkMarkdown.iter_tokens(corr.desc, f'{source}.desc')
 
     def defaults(self, mode: GameMode, direction: Direction, orient: Orient) -> list[CorridorUI]:
         """Fetch the default corridor set for this mode, direction and orientation."""

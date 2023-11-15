@@ -241,7 +241,7 @@ def setup(conf_lang: str) -> None:
     LOGGER.debug('Language codes: {!r}', expanded_langs)
 
     for lang in expanded_langs:
-        filename = FOLDER / (lang + '.mo')
+        filename = FOLDER / f'{lang}.mo'
         try:
             file = open(filename, 'rb')
         except FileNotFoundError:

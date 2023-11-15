@@ -25,13 +25,12 @@ class Elevator(PakObject, needs_foreground=True):
 
         self.selitem_data = selitem_data
 
+        self.horiz_video = video
         if vert_video is None:
             self.has_orient = False
-            self.horiz_video = video
             self.vert_video = video
         else:
             self.has_orient = True
-            self.horiz_video = video
             self.vert_video = vert_video
 
     @classmethod
@@ -59,7 +58,7 @@ class Elevator(PakObject, needs_foreground=True):
 
     def iter_trans_tokens(self) -> Iterator[TransTokenSource]:
         """Yield translation tokens present in the elevator."""
-        return self.selitem_data.iter_trans_tokens('elevators/' + self.id)
+        return self.selitem_data.iter_trans_tokens(f'elevators/{self.id}')
 
     @staticmethod
     def export(exp_data: ExportData) -> None:

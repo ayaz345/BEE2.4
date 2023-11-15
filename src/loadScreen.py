@@ -163,7 +163,7 @@ class LoadScreen:
                 # Mark this loadscreen as cancelled.
                 _SCREEN_CANCEL_FLAG.add(arg)
             else:
-                raise ValueError('Bad command from daemon: ' + repr(command))
+                raise ValueError(f'Bad command from daemon: {repr(command)}')
 
         # If the flag was set for us, raise an exception - the loading thing
         # will then stop.
@@ -227,10 +227,8 @@ class LoadScreen:
 
 def shutdown() -> None:
     """Instruct the daemon process to shut down."""
-    try:
+    with contextlib.suppress(BrokenPipeError):
         _PIPE_MAIN_SEND.send(('quit_daemon', None, None))
-    except BrokenPipeError:  # Already quit, don't care.
-        pass
 
 
 @localisation.add_callback(call=False)

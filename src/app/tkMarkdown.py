@@ -246,10 +246,7 @@ class TKRenderer(base_renderer.BaseRenderer):
 
     def render_line_break(self, token: stok.LineBreak) -> SingleMarkdown:
         """Render a newline."""
-        if token.soft:
-            return SingleMarkdown([])
-        else:
-            return MarkdownData.text('\n')
+        return SingleMarkdown([]) if token.soft else MarkdownData.text('\n')
 
     def render_link(self, token: stok.Link) -> SingleMarkdown:
         """Render links."""

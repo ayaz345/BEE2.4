@@ -406,10 +406,7 @@ class Selector:
         """Return the group to drop an item into, from a mouse position."""
         # pos, slots, row, col = self._mouse_to_pos(x, y)
         header_y = self.header_unsel.winfo_rooty()
-        if y > header_y + HEADER_HEIGHT / 2:
-            return GRP_UNSELECTED
-        else:
-            return GRP_SELECTED
+        return GRP_UNSELECTED if y > header_y + HEADER_HEIGHT / 2 else GRP_SELECTED
 
     def disp_corr(self, corr: Optional[corridor.CorridorUI]) -> None:
         """Display the specified corridor, or reset if None."""
@@ -446,11 +443,8 @@ class Selector:
         self.img_ind += direction
         # Order this and the comparisons so size = 0 means index is forced to 0 with both
         # hidden.
-        if self.img_ind > max_ind:
-            self.img_ind = max_ind
-        if self.img_ind < 0:
-            self.img_ind = 0
-
+        self.img_ind = min(self.img_ind, max_ind)
+        self.img_ind = max(self.img_ind, 0)
         if self.cur_images:
             img.apply(self.wid_image, self.cur_images[self.img_ind])
         else:

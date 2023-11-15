@@ -1,4 +1,5 @@
 """Launches the correct compiler."""
+
 import os
 import sys
 import trio  # Install its import hook
@@ -27,4 +28,4 @@ elif app_name in ('vrad.exe', 'vrad_osx', 'vrad_linux'):
 elif 'original' in app_name:
     sys.exit('Original compilers replaced, verify game cache!')
 else:
-    sys.exit('Unknown application name "{}"!'.format(app_name))
+    sys.exit(f'Unknown application name "{app_name}"!')

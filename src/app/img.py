@@ -116,9 +116,7 @@ _early_loads: set[Handle] = set()
 
 def tuple_size(size: tuple[int, int] | int) -> tuple[int, int]:
     """Return a xy tuple given a size or tuple."""
-    if isinstance(size, tuple):
-        return size
-    return size, size
+    return size if isinstance(size, tuple) else (size, size)
 
 
 def _get_tk_img(width: int, height: int) -> ImageTk.PhotoImage:
@@ -383,7 +381,7 @@ class Handle:
                         g = int(color[1] * 2, 16)
                         b = int(color[2] * 2, 16)
                     elif len(color) == 6:
-                        r = int(color[0:2], 16)
+                        r = int(color[:2], 16)
                         g = int(color[2:4], 16)
                         b = int(color[4:6], 16)
                     else:
@@ -413,12 +411,16 @@ class Handle:
     @classmethod
     def builtin(cls, path: str, width: int = 0, height: int = 0) -> ImgBuiltin:
         """Shortcut for getting a handle to a builtin UI image."""
-        return ImgBuiltin._deduplicate(width, height, utils.PackagePath('<bee2>', path + '.png'))
+        return ImgBuiltin._deduplicate(
+            width, height, utils.PackagePath('<bee2>', f'{path}.png')
+        )
 
     @classmethod
     def sprite(cls, path: str, width: int = 0, height: int = 0) -> ImgSprite:
         """Shortcut for getting a handle to a builtin UI image, but with nearest-neighbour rescaling."""
-        return ImgSprite._deduplicate(width, height, utils.PackagePath('<bee2>', path + '.png'))
+        return ImgSprite._deduplicate(
+            width, height, utils.PackagePath('<bee2>', f'{path}.png')
+        )
 
     @classmethod
     def composite(cls, children: Sequence[Handle], width: int = 0, height: int = 0) -> Handle:
@@ -969,10 +971,7 @@ def apply(widget: tkImgWidgetsT, img: Handle | None) -> tkImgWidgetsT:
     img._incref(ref)
     _wid_tk[ref] = img
     cached_img = img._cached_tk
-    if cached_img is not None:
-        widget['image'] = cached_img
-    else:  # Need to load.
-        widget['image'] = img._request_load()
+    widget['image'] = cached_img if cached_img is not None else img._request_load()
     return widget
 
 

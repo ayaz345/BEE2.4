@@ -35,10 +35,7 @@ class LastSelected(config.Data, conf_name='LastSelected', uses_id=True):
             except LookupError:
                 continue
 
-            if value.casefold() == '<none>':
-                result[new] = cls(None)
-            else:
-                result[new] = cls(value)
+            result[new] = cls(None) if value.casefold() == '<none>' else cls(value)
         return result
 
     @classmethod
@@ -47,9 +44,7 @@ class LastSelected(config.Data, conf_name='LastSelected', uses_id=True):
         assert version == 1, version
         if data.has_children():
             raise ValueError(f'LastSelected cannot be a block: {data!r}')
-        if data.value.casefold() == '<none>':
-            return cls(None)
-        return cls(data.value)
+        return cls(None) if data.value.casefold() == '<none>' else cls(data.value)
 
     def export_kv1(self) -> Property:
         """Export to a property block."""

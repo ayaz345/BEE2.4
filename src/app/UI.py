@@ -251,9 +251,7 @@ class Item:
             # PROP_TYPES is a dict holding all the modifiable properties.
             if prop_name in PROP_TYPES:
                 result[prop_name] = item_opts.get_val(
-                    self.id,
-                    'PROP_' + prop_name,
-                    prop.export(),
+                    self.id, f'PROP_{prop_name}', prop.export()
                 )
             else:
                 LOGGER.warning(
@@ -266,7 +264,7 @@ class Item:
     def set_properties(self, props: Dict[str, Any]) -> None:
         """Apply the properties to the item."""
         for prop, value in props.items():
-            item_opts[self.id]['PROP_' + prop] = str(value)
+            item_opts[self.id][f'PROP_{prop}'] = str(value)
 
     def refresh_subitems(self) -> None:
         """Call load_data() on all our subitems, so they reload icons and names."""
@@ -394,10 +392,7 @@ class PalItem:
         """Make the contextWin open itself at the indicated subitem.
 
         """
-        if self.is_pre:
-            items_list = pal_picked[:]
-        else:
-            items_list = []
+        items_list = pal_picked[:] if self.is_pre else []
         # Open on the palette, but also open on the item picker if needed
         for item in itertools.chain(items_list, pal_items):
             if item.id == self.id and item.subKey == ind:
@@ -435,10 +430,10 @@ class PalItem:
 
     def on_pal(self) -> bool:
         """Determine if this item is on the palette."""
-        for item in pal_picked:
-            if self.id == item.id and self.subKey == item.subKey:
-                return True
-        return False
+        return any(
+            self.id == item.id and self.subKey == item.subKey
+            for item in pal_picked
+        )
 
     def copy(self, frame):
         return PalItem(frame, self.item, self.subKey, self.is_pre)
@@ -951,7 +946,7 @@ def drag_move(e: tk.Event) -> None:
         return
 
     set_disp_name(drag_win.drag_item)
-    drag_win.geometry('+'+str(e.x_root-32)+'+'+str(e.y_root-32))
+    drag_win.geometry(f'+{str(e.x_root - 32)}+{str(e.y_root - 32)}')
     pos_x, pos_y = conv_screen_to_grid(e.x_root, e.y_root)
     if 0 <= pos_x < 4 and 0 <= pos_y < 8:
         drag_win['cursor'] = tk_tools.Cursors.MOVE_ITEM
@@ -989,14 +984,13 @@ def drag_fast(drag_item: PalItem, e: tk.Event) -> None:
     if 0 <= pos_x < 4:
         snd.fx('delete')
         flow_picker()
-    else:  # over the picker
-        if len(pal_picked) < 32:  # can't copy if there isn't room
-            snd.fx('config')
-            new_item = drag_item.copy(frames['preview'])
-            new_item.is_pre = True
-            pal_picked.append(new_item)
-        else:
-            snd.fx('error')
+    elif len(pal_picked) < 32:  # can't copy if there isn't room
+        snd.fx('config')
+        new_item = drag_item.copy(frames['preview'])
+        new_item.is_pre = True
+        pal_picked.append(new_item)
+    else:
+        snd.fx('error')
     flow_preview()
 
 
@@ -1160,6 +1154,7 @@ async def init_option(
             pass
         else:
             voiceEditor.show(chosen_voice)
+
     for ind, name in enumerate([
             TransToken.ui("Style: "),
             None,
@@ -1186,13 +1181,7 @@ async def init_option(
         TransToken.ui('Enable or disable particular voice lines, to prevent them from being added.'),
     )
 
-    if utils.WIN:
-        # On Windows, the buttons get inset on the left a bit. Inset everything
-        # else to adjust.
-        left_pad = (1, 0)
-    else:
-        left_pad = (0, 0)
-
+    left_pad = (1, 0) if utils.WIN else (0, 0)
     # Make all the selector window textboxes
     (await style_win.widget(props)).grid(row=0, column=1, sticky='EW', padx=left_pad)
     # row=1: Suggested.
@@ -1321,9 +1310,7 @@ def flow_picker(e=None) -> None:
     mandatory_unlocked = StyleVarPane.mandatory_unlocked()
 
     width = (pal_canvas.winfo_width() - 10) // 65
-    if width < 1:
-        width = 1  # we got way too small, prevent division by zero
-
+    width = max(width, 1)
     i = 0
     for item in pal_items:
         if item.needs_unlock and not mandatory_unlocked:

@@ -97,9 +97,8 @@ async def route_static_js(filename: str) -> quart.ResponseReturnValue:
     """Ensure javascript is returned with the right MIME type."""
     return await quart.send_from_directory(
         directory=app.static_folder,
-        file_name=filename + '.js',
+        file_name=f'{filename}.js',
         mimetype='text/javascript',
-        # Disable cache. Steam Overlay doesn't easily let you clear cache, and it's local anyway.
         cache_timeout=1,
     )
 

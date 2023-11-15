@@ -249,7 +249,7 @@ class CubeAddon:
 
     @classmethod
     def parse(cls, props: Property) -> 'CubeAddon':
-        addon = cls(
+        return cls(
             props['id'],
             props['instance', ''],
             props['packlist', ''],
@@ -257,7 +257,6 @@ class CubeAddon:
             cls._parse_outputs(props),
             cls._parse_fixups(props),
         )
-        return addon
 
     @classmethod
     def base_parse(cls, cube_id: str, props: Property):
@@ -280,9 +279,7 @@ class CubeAddon:
 
         for out_type in CubeOutputs:
             outputs[out_type] = out_list = []
-            for prop in props.find_all(out_type.value):
-                out_list.append(Output.parse(prop))
-
+            out_list.extend(Output.parse(prop) for prop in props.find_all(out_type.value))
         return outputs
 
     @staticmethod
@@ -518,7 +515,7 @@ class CubeType:
         """
         # If we have a coloured version, we might need that too.
         if self.model_color and self.color_in_map:
-            models[self.model_color] = self.has_name + '_color'
+            models[self.model_color] = f'{self.has_name}_color'
 
         if self.in_map:
             if self.model:
@@ -565,11 +562,7 @@ class CubePair:
         self.tint = tint  # If set, Colorizer color to use.
 
         # Copy from the dropper, allowing specific droppers to update this.
-        if drop_type is not None:
-            self.spawn_offset = drop_type.cube_pos
-        else:
-            self.spawn_offset = Vec()
-
+        self.spawn_offset = drop_type.cube_pos if drop_type is not None else Vec()
         # Addons to attach to the cubes.
         # Use a set to ensure it doesn't have two copies.
         self.addons: set[CubeAddon] = set()
@@ -786,18 +779,9 @@ def cube_filter(vmf: VMF, pos: Vec, cubes: list[str]) -> str:
             )['targetname']
             return filter_name
 
-    # Some others which are predefined.
-
-    if len(inclusions) > len(CUBE_TYPES) / 2 and 0:
-        # If more than half of cubes are included, it's better to exclude
-        # the missing ones.
-        invert = True
-        name_start = '@filter_bee2_exc_'
-        children = all_cubes - inclusions
-    else:
-        name_start = '@filter_bee2_inc_'
-        invert = False
-        children = inclusions
+    name_start = '@filter_bee2_inc_'
+    invert = False
+    children = inclusions
 
     # Models we need to include in the multi-filter -> name to use.
     models: dict[str, str] = {}
@@ -827,7 +811,7 @@ def cube_filter(vmf: VMF, pos: Vec, cubes: list[str]) -> str:
             names.add(CUBE_FILTERS[model])
         except KeyError:
             # We need to make one.
-            filter_name = name_start + 'mdl_' + filter_name
+            filter_name = f'{name_start}mdl_{filter_name}'
             vmf.create_ent(
                 classname='filter_activator_model',
                 targetname=filter_name,
@@ -865,11 +849,8 @@ def _make_multi_filter(
     """
     # Check for existing ents of the same type.
     key = frozenset(names), invert
-    try:
+    with suppress(KeyError):
         return CUBE_FILTERS[key]
-    except KeyError:
-        pass
-
     if len(names) > MULTI_FILTER_COUNT:
         # 5 is the maximum number in a filter_multi, we need more than one.
         names, extra_names = names[:MULTI_FILTER_COUNT], names[MULTI_FILTER_COUNT:]
@@ -895,11 +876,8 @@ def _make_multi_filter(
         # For inverted ones, we need to check it's a cube class, AND not
         # the models.
         inv_name = filter_ent['targetname']
-        try:
+        with suppress(KeyError):
             return CUBE_FILTERS[inv_name, all]
-        except KeyError:
-            pass
-
         filter_ent = vmf.create_ent(
             classname='filter_multi',
             origin=pos,
@@ -1389,11 +1367,11 @@ def link_cubes(vmf: VMF, info: conditions.MapInfo) -> None:
             names.append('notsphereshaped')
 
         for name in names:
-            info.set_attr('cube' + name)
+            info.set_attr(f'cube{name}')
             if pair.dropper:
-                info.set_attr('cubedropper', 'cubedropper' + name)
+                info.set_attr('cubedropper', f'cubedropper{name}')
             else:
-                info.set_attr('cubedropperless' + name)
+                info.set_attr(f'cubedropperless{name}')
 
 
 def setup_output(

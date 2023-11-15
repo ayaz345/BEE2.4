@@ -60,9 +60,7 @@ class Opt:
         # Remove indentation, and trailing carriage return
         self.doc = inspect.cleandoc(doc).rstrip().splitlines()
         if fallback is not None:
-            self.doc.append(
-                'If unset, the default is read from `{}`.'.format(default)
-            )
+            self.doc.append(f'If unset, the default is read from `{default}`.')
 
 
 def load(opt_blocks: Iterator[Property]) -> None:
@@ -91,7 +89,7 @@ def load(opt_blocks: Iterator[Property]) -> None:
         except KeyError:
             if opt.fallback is not None:
                 fallback_opts.append(opt)
-                assert opt.fallback in options, 'Invalid fallback in ' + opt.id
+                assert opt.fallback in options, f'Invalid fallback in {opt.id}'
             else:
                 SETTINGS[opt.id] = opt.default  # type: ignore
             continue
@@ -114,7 +112,7 @@ def load(opt_blocks: Iterator[Property]) -> None:
         try:
             SETTINGS[opt.id] = SETTINGS[opt.fallback]
         except KeyError:
-            raise Exception('Bad fallback for "{}"!'.format(opt.id))
+            raise Exception(f'Bad fallback for "{opt.id}"!')
         # Check they have the same type.
         assert opt.type is options[opt.fallback].type
 
@@ -159,7 +157,7 @@ def get(expected_type: Type[OptionT], name: str) -> Optional[OptionT]:
     try:
         val = SETTINGS[name.casefold()]
     except KeyError:
-        raise TypeError('Option "{}" does not exist!'.format(name)) from None
+        raise TypeError(f'Option "{name}" does not exist!') from None
 
     if val is None:
         return None
@@ -172,11 +170,7 @@ def get(expected_type: Type[OptionT], name: str) -> Optional[OptionT]:
 
     # Don't allow subclasses (bool/int)
     if type(val) is not expected_type:
-        raise ValueError('Option "{}" is {} (expected {})'.format(
-            name,
-            type(val),
-            expected_type,
-        ))
+        raise ValueError(f'Option "{name}" is {type(val)} (expected {expected_type})')
 
     if enum_type is not None:
         try:
@@ -191,10 +185,7 @@ def get(expected_type: Type[OptionT], name: str) -> Optional[OptionT]:
             return next(iter(enum_type))
 
     # Vec is mutable, don't allow modifying the original.
-    if expected_type is Vec:
-        return cast(Vec, val).copy()
-    else:
-        return cast(OptionT, val)
+    return cast(Vec, val).copy() if expected_type is Vec else cast(OptionT, val)
 
 
 def get_itemconf(
@@ -213,10 +204,7 @@ def get_itemconf(
         return default
 
     try:
-        if isinstance(name, tuple):
-            group_id, wid_id = name
-        else:
-            group_id, wid_id = name.split(':')
+        group_id, wid_id = name if isinstance(name, tuple) else name.split(':')
     except ValueError:
         LOGGER.warning('Invalid item config: {!r}!', name)
         return default
@@ -224,11 +212,7 @@ def get_itemconf(
     wid_id = wid_id.casefold()
 
     if timer_delay is not None:
-        if timer_delay < 3 or timer_delay > 30:
-            wid_id += '_inf'
-        else:
-            wid_id += '_{}'.format(timer_delay)
-
+        wid_id += '_inf' if timer_delay < 3 or timer_delay > 30 else f'_{timer_delay}'
     value = ITEM_CONFIG.get_val(group_id, wid_id, '')
     if not value:
         return default
@@ -244,7 +228,7 @@ def get_itemconf(
     elif isinstance(default, int):
         return srctools.conv_int(value, default)
     else:
-        raise TypeError('Invalid default type "{}"!'.format(type(default).__name__))
+        raise TypeError(f'Invalid default type "{type(default).__name__}"!')
 
 
 INFO_DUMP_FORMAT = """\
@@ -272,7 +256,7 @@ def dump_info(file: TextIO) -> None:
         elif type(opt.default) is Vec:
             default = '(`' + opt.default.join(' ') + '`)'
         else:
-            default = ' = `' + repr(opt.default) + '`'
+            default = f' = `{repr(opt.default)}`'
         file.write(INFO_DUMP_FORMAT.format(
             id=opt.name,
             default=default,

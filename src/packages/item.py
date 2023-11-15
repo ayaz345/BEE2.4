@@ -172,11 +172,7 @@ class ItemVariant:
         else:
             authors = self.authors
 
-        if 'tags' in props:
-            tags = sep_values(props['tags', ''])
-        else:
-            tags = self.tags.copy()
-
+        tags = sep_values(props['tags', '']) if 'tags' in props else self.tags.copy()
         variant = ItemVariant(
             pak_id,
             self.editor,
@@ -215,8 +211,8 @@ class ItemVariant:
         """Iterate over the tokens in this item variant."""
         yield from self.editor.iter_trans_tokens(source)
         if self.all_name is not None:
-            yield self.all_name, source + '.all_name'
-        yield from tkMarkdown.iter_tokens(self.desc, source + '.desc')
+            yield (self.all_name, f'{source}.all_name')
+        yield from tkMarkdown.iter_tokens(self.desc, f'{source}.desc')
         for item in self.editor_extra:
             yield from item.iter_trans_tokens(f'{source}:{item.id}')
 
@@ -463,7 +459,7 @@ class Item(PakObject, needs_foreground=True):
         folders_to_parse: set[str] = set()
         unstyled = data.info.bool('unstyled')
 
-        glob_desc = desc_parse(data.info, 'global:' + data.id, data.pak_id)
+        glob_desc = desc_parse(data.info, f'global:{data.id}', data.pak_id)
         desc_last = data.info.bool('AllDescLast')
 
         all_config = get_config(
@@ -561,10 +557,13 @@ class Item(PakObject, needs_foreground=True):
 
         # We want to ensure the number of visible subtypes doesn't change.
         subtype_counts = {
-            tuple([
-                i for i, subtype in enumerate(item_variant_result().editor.subtypes, 1)
+            tuple(
+                i
+                for i, subtype in enumerate(
+                    item_variant_result().editor.subtypes, 1
+                )
                 if subtype.pal_pos or subtype.pal_name
-            ])
+            )
             for item_variant_result in parsed_folders.values()
         }
         if len(subtype_counts) > 1:
@@ -616,17 +615,16 @@ class Item(PakObject, needs_foreground=True):
             else:
                 our_ver = self.versions[ver_id]
                 for sty_id, style in version.styles.items():
-                    if sty_id not in our_ver.styles:
-                        # We don't have that style!
-                        our_ver.styles[sty_id] = style
-                        our_ver.inherit_kind[sty_id] = version.inherit_kind[sty_id]
-                    else:
+                    if sty_id in our_ver.styles:
                         raise ValueError(
                             'Two definitions for item folder {}.{}.{}',
                             self.id,
                             ver_id,
                             sty_id,
                         )
+                    # We don't have that style!
+                    our_ver.styles[sty_id] = style
+                    our_ver.inherit_kind[sty_id] = version.inherit_kind[sty_id]
                         # our_style.override_from_folder(style)
 
     def __repr__(self) -> str:
@@ -682,7 +680,9 @@ class Item(PakObject, needs_foreground=True):
             except KeyError:
                 pass
             else:
-                vbsp_config.extend(apply_replacements(aux_conf.all_conf(), item.id + ':aux_all'))
+                vbsp_config.extend(
+                    apply_replacements(aux_conf.all_conf(), f'{item.id}:aux_all')
+                )
                 try:
                     version_data = aux_conf.versions[ver_id]
                 except KeyError:
@@ -692,10 +692,11 @@ class Item(PakObject, needs_foreground=True):
                     # that's defined for this config
                     for poss_style in exp_data.selected_style.bases:
                         if poss_style.id in version_data:
-                            vbsp_config.extend(apply_replacements(
-                                version_data[poss_style.id](),
-                                item.id + ':aux'
-                            ))
+                            vbsp_config.extend(
+                                apply_replacements(
+                                    version_data[poss_style.id](), f'{item.id}:aux'
+                                )
+                            )
                             break
 
     def _get_export_data(

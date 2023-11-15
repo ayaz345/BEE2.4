@@ -71,12 +71,12 @@ class Plane(Generic[ValT], MutableMapping[Tuple[int, int], ValT]):
                 None if row is None else [value] * len(row)
                 for row in source._data
             ]
-            return res
         else:
             res = Plane()
             for xy in source:
                 res[xy] = value
-            return res
+
+        return res
 
     def copy(self) -> 'Plane[ValT]':
         """Shallow-copy the plane."""
@@ -168,8 +168,8 @@ class Plane(Generic[ValT], MutableMapping[Tuple[int, int], ValT]):
         if y_ind < 0:
             change = -y_ind
             self._yoff += change
-            self._xoffs[0:0] = [0] * change
-            self._data[0:0] = [None] * change
+            self._xoffs[:0] = [0] * change
+            self._data[:0] = [None] * change
             y_ind = 0
         elif y_ind >= y_bound:
             change = y_ind - y_bound + 1
@@ -192,7 +192,7 @@ class Plane(Generic[ValT], MutableMapping[Tuple[int, int], ValT]):
         if x_ind < 0:
             change = -x_ind
             self._xoffs[y_ind] += change
-            data[0:0] = [_UNSET] * change
+            data[:0] = [_UNSET] * change
             x_ind = 0
         elif x_ind >= x_bound:
             change = x_ind - x_bound + 1
@@ -287,9 +287,7 @@ class PlaneItems(ItemsView[Tuple[int, int], ValT]):
         try:
             xy, value = item
             return self._mapping[xy] == value
-        except ValueError:  # len(tup) != 3
-            return False
-        except KeyError:  # Not present
+        except (ValueError, KeyError):  # len(tup) != 3
             return False
 
     def __iter__(self) -> Iterator[Tuple[Tuple[int, int], ValT]]:

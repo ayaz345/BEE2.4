@@ -33,9 +33,7 @@ class Orient(Enum):
         """Return the orient flipped along Z."""
         if self is Orient.UP:
             return Orient.DN
-        if self is Orient.DN:
-            return Orient.UP
-        return self
+        return Orient.UP if self is Orient.DN else self
 
 
 @attrs.frozen

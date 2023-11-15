@@ -295,11 +295,13 @@ def save_collision_bbox(item: Item, vmf: VMF) -> None:
         coll.as_ent(vmf)
 
 
-LOAD_FUNCS.update({
-    'bee2' + name[4:]: func
-    for name, func in globals().items()
-    if name.startswith('load_')
-})
+LOAD_FUNCS.update(
+    {
+        f'bee2{name[4:]}': func
+        for name, func in globals().items()
+        if name.startswith('load_')
+    }
+)
 SAVE_FUNCS.extend([
     func
     for name, func in globals().items()

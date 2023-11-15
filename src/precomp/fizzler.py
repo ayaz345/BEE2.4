@@ -255,9 +255,7 @@ class FizzlerType:
                     LOGGER.warning('No instances found using specifier "{}"!', prop.value)
                 instances.extend(resolved)
 
-            # Allow specifying weights to bias model locations
-            weights = conf[inst_type_name + '_weight', '']
-            if weights:
+            if weights := conf[f'{inst_type_name}_weight', '']:
                 # Produce the weights, then process through the original
                 # list to build a new one with repeated elements.
                 inst[inst_type, is_static] = instances = list(map(
@@ -272,8 +270,7 @@ class FizzlerType:
         voice_attrs = []
         for prop in conf.find_all('Has'):
             if prop.has_children():
-                for child in prop:
-                    voice_attrs.append(child.name.casefold())
+                voice_attrs.extend(child.name.casefold() for child in prop)
             else:
                 voice_attrs.append(prop.value.casefold())
 
@@ -666,7 +663,7 @@ class FizzlerBrush:
 
         # If set, add a material_modify_control to control these brushes.
         if mat_mod_var is not None and not mat_mod_var.startswith('$'):
-            mat_mod_var = '$' + mat_mod_var
+            mat_mod_var = f'${mat_mod_var}'
             if mat_mod_name is None:
                 mat_mod_name = 'mat_mod'
             if not singular:
@@ -683,21 +680,16 @@ class FizzlerBrush:
     @classmethod
     def parse(cls, conf: Property, fizz_id: str) -> FizzlerBrush:
         """Parse from a config file."""
-        if 'side_color' in conf:
-            side_color = conf.vec('side_color')
-        else:
-            side_color = None
-
+        side_color = conf.vec('side_color') if 'side_color' in conf else None
         outputs = [
             Output.parse(prop)
             for prop in
             conf.find_children('Outputs')
         ]
 
-        textures: dict[TexGroup, str | None] = {}
-        for group in TexGroup:
-            textures[group] = conf['tex_' + group.value, None]
-
+        textures: dict[TexGroup, str | None] = {
+            group: conf[f'tex_{group.value}', None] for group in TexGroup
+        }
         keys = {
             prop.name: prop.value
             for prop in
@@ -792,12 +784,7 @@ class FizzlerBrush:
         # If we don't have this, we can't be a single brush.
         short_tex = self.textures[TexGroup.SHORT]
 
-        if trigger_tex or fitted_tex:
-            tex_size = LASER_TEX_SIZE
-        else:
-            # Fizzlers are larger resolution..
-            tex_size = FIZZLER_TEX_SIZE
-
+        tex_size = LASER_TEX_SIZE if trigger_tex or fitted_tex else FIZZLER_TEX_SIZE
         # Treat 127.9999 as 128, etc.
         if (round(field_length) == 128 and short_tex) or trigger_tex or fitted_tex:
             # We need only one brush.
@@ -942,22 +929,18 @@ class FizzlerBrush:
                         ]
                         if not self.stretch_center:
                             side.uaxis.scale = 0.25
+                    elif side.uaxis.vec() == model_normal:
+                        side.mat = self.textures[
+                            TexGroup.TAG_ON_RIGHT
+                            if tag_enabled else
+                            TexGroup.RIGHT
+                        ]
                     else:
-                        # For left and right, we need to figure out what
-                        # direction the texture should be in. The uaxis is
-                        # in the direction of the surface.
-                        if side.uaxis.vec() == model_normal:
-                            side.mat = self.textures[
-                                TexGroup.TAG_ON_RIGHT
-                                if tag_enabled else
-                                TexGroup.RIGHT
-                            ]
-                        else:
-                            side.mat = self.textures[
-                                TexGroup.TAG_ON_LEFT
-                                if tag_enabled else
-                                TexGroup.LEFT
-                            ]
+                        side.mat = self.textures[
+                            TexGroup.TAG_ON_LEFT
+                            if tag_enabled else
+                            TexGroup.LEFT
+                        ]
                     used_tex_func(side.mat)
 
     def _texture_fit(
@@ -1511,7 +1494,7 @@ def generate_fizzlers(vmf: VMF) -> None:
                     classname='material_modify_control',
                     origin=pos,
                     targetname=mat_mod_name,
-                    materialName='materials/' + tex + '.vmt',
+                    materialName=f'materials/{tex}.vmt',
                     materialVar=brush_type.mat_mod_var,
                     parentname=brush_name,
                 )

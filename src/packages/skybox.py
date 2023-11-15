@@ -58,7 +58,7 @@ class Skybox(PakObject, needs_foreground=True):
 
     def iter_trans_tokens(self) -> Iterator[TransTokenSource]:
         """Yield translation tokens used by this skybox."""
-        return self.selitem_data.iter_trans_tokens('skyboxes/' + self.id)
+        return self.selitem_data.iter_trans_tokens(f'skyboxes/{self.id}')
 
     def __repr__(self) -> str:
         return f'<Skybox {self.id}>'

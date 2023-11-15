@@ -108,7 +108,7 @@ async def main(argv: List[str]) -> None:
     # P2 adds wrong slashes sometimes, so fix that.
     fast_args[-1] = path = os.path.normpath(argv[-1])
 
-    LOGGER.info("Map path is " + path)
+    LOGGER.info(f"Map path is {path}")
 
     LOGGER.info('Loading Settings...')
     config = ConfigFile('compile.cfg')
@@ -143,9 +143,9 @@ async def main(argv: List[str]) -> None:
         path += ".bsp"
 
     if not os.path.exists(path):
-        raise ValueError('"{}" does not exist!'.format(path))
+        raise ValueError(f'"{path}" does not exist!')
     if not os.path.isfile(path):
-        raise ValueError('"{}" is not a file!'.format(path))
+        raise ValueError(f'"{path}" is not a file!')
 
     LOGGER.info('Reading BSP')
     bsp_file = BSP(path)
@@ -160,10 +160,7 @@ async def main(argv: List[str]) -> None:
             light_args = config.get_val('General', 'vrad_compile_type', 'FAST')
             # If shift is held, reverse.
             if utils.check_shift():
-                if light_args == 'FAST':
-                    light_args = 'FULL'
-                else:
-                    light_args = 'FAST'
+                light_args = 'FULL' if light_args == 'FAST' else 'FAST'
                 LOGGER.info('Shift held, changing configured lighting option to {}!', light_args)
         else:
             # publishing - always force full lighting.
@@ -184,9 +181,9 @@ async def main(argv: List[str]) -> None:
             is_peti = False
             light_args = 'FULL'
 
-        if '-skip_vrad' in args:
-            LOGGER.warning('OVERRIDE: VRAD will not run!')
-            light_args = 'NONE'
+    if '-skip_vrad' in args:
+        LOGGER.warning('OVERRIDE: VRAD will not run!')
+        light_args = 'NONE'
 
     LOGGER.info('Map status: is_peti={}, is_preview={} light_args={}', is_peti, is_preview, light_args)
     if not is_peti:

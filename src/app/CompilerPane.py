@@ -213,7 +213,7 @@ def refresh_counts(*counters: LimitCounter) -> None:
 
         # The in-engine entity limit is different to VBSP's limit
         # (that one might include prop_static, lights etc).
-        max_value = COMPILE_CFG.get_int('Counts', 'max_' + limit_counter.name)
+        max_value = COMPILE_CFG.get_int('Counts', f'max_{limit_counter.name}')
         if limit_counter.name != 'entity' and max_value != 0:
             limit_counter.max = max_value
 
@@ -240,16 +240,15 @@ def set_pack_dump_enabled() -> None:
 
 def find_screenshot(e=None) -> None:
     """Prompt to browse for a screenshot."""
-    file_name = filedialog.askopenfilename(
+    if file_name := filedialog.askopenfilename(
         title='Find Screenshot',
         filetypes=[
             (
                 str(TRANS_SCREENSHOT_FILETYPE),
-                '*.jpg *.jpeg *.jpe *.jfif *.png *.bmp *.tiff *.tga *.ico *.psd'
+                '*.jpg *.jpeg *.jpe *.jfif *.png *.bmp *.tiff *.tga *.ico *.psd',
             ),
         ],
-    )
-    if file_name:
+    ):
         image = Image.open(file_name).convert('RGB')  # Remove alpha channel if present.
         buf = io.BytesIO()
         image.save(buf, 'png')

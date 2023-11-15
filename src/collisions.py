@@ -143,11 +143,10 @@ class BBox:
                 raise TypeError('6 numbers must be supplied!')
         elif len(args) == 2:
             point1, point2 = args
-            if isinstance(point1, Vec) and isinstance(point2, Vec):
-                min_x, min_y, min_z = round(point1.x), round(point1.y), round(point1.z)
-                max_x, max_y, max_z = round(point2.x), round(point2.y), round(point2.z)
-            else:
+            if not isinstance(point1, Vec) or not isinstance(point2, Vec):
                 raise TypeError(f'Expected 2 vectors, got {type(point1).__name__} and {type(point2).__name__}')
+            min_x, min_y, min_z = round(point1.x), round(point1.y), round(point1.z)
+            max_x, max_y, max_z = round(point2.x), round(point2.y), round(point2.z)
         else:
             raise TypeError(f'Expected 2 or 6 positional args, got {len(args)}!')
         if min_x > max_x:

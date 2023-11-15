@@ -49,8 +49,6 @@ def tk_error(
         on_error(exc_type, exc_value, exc_tb)
     except Exception:
         logger.exception('Failed to display messagebox:')
-        pass
-
     logger.error(
         msg='Uncaught Tk Exception:',
         exc_info=(exc_type, exc_value, exc_tb),

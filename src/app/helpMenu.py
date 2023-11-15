@@ -541,7 +541,7 @@ def make_help_menu(parent: tk.Menu) -> None:
     localisation.set_menu_text(parent, TransToken.ui('Help'))
 
     icons: Dict[ResIcon, img.Handle] = {
-        icon: img.Handle.sprite('icons/' + icon.value, 16, 16)
+        icon: img.Handle.sprite(f'icons/{icon.value}', 16, 16)
         for icon in ResIcon
         if icon is not ResIcon.NONE
     }

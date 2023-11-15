@@ -325,16 +325,14 @@ class ConfigGroup(packages.PakObject, allow_mult=True, needs_foreground=True):
     def iter_trans_tokens(self) -> Iterator[TransTokenSource]:
         """Yield translation tokens for this config group."""
         source = f'configgroup/{self.id}'
-        yield self.name, source + '.name'
+        yield (self.name, f'{source}.name')
         for widget in itertools.chain(self.widgets, self.multi_widgets):
             yield widget.name, f'{source}/{widget.id}.name'
             yield widget.tooltip, f'{source}/{widget.id}.tooltip'
 
     def add_over(self, override: 'ConfigGroup') -> None:
         """Override a ConfigGroup to add additional widgets."""
-        # Make sure they don't double-up.
-        conficts = self.widget_ids() & override.widget_ids()
-        if conficts:
+        if conficts := self.widget_ids() & override.widget_ids():
             raise ValueError('Duplicate IDs in "{}" override - {}', self.id, conficts)
 
         self.widgets.extend(override.widgets)

@@ -25,8 +25,7 @@ cursors = [
     "countingupanddownhand", "spinning",
 ]
 win = Tk()
-pos = 0
-for cur in cursors:
+for pos, cur in enumerate(cursors):
     try:
         lbl = Label(
             win,
@@ -46,5 +45,4 @@ for cur in cursors:
         sticky=W, padx=10,
         pady=4,
     )
-    pos += 1
 win.mainloop()

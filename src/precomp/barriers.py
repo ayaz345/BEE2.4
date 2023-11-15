@@ -162,10 +162,7 @@ def res_glass_hole(inst: Entity, res: Property):
         inv_normal = -normal
 
         sec_placement = test_hole_spot(inv_origin, inv_normal, hole_type)
-        if sec_placement == 'valid':
-            sel_origin = inv_origin
-            sel_normal = inv_normal
-        else:
+        if sec_placement != 'valid':
             raise user_errors.UserError(
                 user_errors.TOK_BARRIER_HOLE_FOOTPRINT
                 if first_placement == 'nospace' or sec_placement == 'nospace' else
@@ -178,6 +175,8 @@ def res_glass_hole(inst: Entity, res: Property):
                     footprint=True,
                 )
             )
+        sel_origin = inv_origin
+        sel_normal = inv_normal
     # Place it, or error if there's already one here.
     key = (sel_origin.as_tuple(), sel_normal.as_tuple())
     if key in HOLES:
@@ -203,12 +202,11 @@ def template_solids_and_coll(
     """Retrieve the brushes and collision boxes for the specified visgroup."""
     if template is None:
         return [], []
-    else:
-        groups = {visgroup, ''}
-        return template.visgrouped_solids(visgroup), [
-            coll.bbox for coll in template.collisions
-            if coll.visgroups.issubset(groups)
-        ]
+    groups = {visgroup, ''}
+    return template.visgrouped_solids(visgroup), [
+        coll.bbox for coll in template.collisions
+        if coll.visgroups.issubset(groups)
+    ]
 
 
 @conditions.meta_cond(150)
@@ -467,10 +465,7 @@ def make_barriers(vmf: VMF, coll: collisions.Collisions) -> None:
                     for face in brush.sides:
                         face.mat = mat
                         for point in face.planes:
-                            if point.x > 64:
-                                point.x = off_max
-                            else:
-                                point.x = off_min
+                            point.x = off_max if point.x > 64 else off_min
                         face.localise(origin, matrix)
                         # Increase precision, these are small detail brushes.
                         face.lightmap = 8
@@ -659,12 +654,11 @@ def add_glass_floorbeams(vmf: VMF, temp_name: str):
     # point to the new list.
     # Once done, every unique list = a group.
 
-    for pos_tup in groups.keys():
+    for pos_tup, our_group in groups.items():
         pos = Vec(pos_tup)
         for off in ((128, 0, 0), (0, 128, 0)):
             neighbour = (pos + off).as_tuple()
             if neighbour in groups:
-                our_group = groups[pos_tup]
                 neigh_group = groups[neighbour]
                 if our_group is neigh_group:
                     continue
@@ -672,11 +666,11 @@ def add_glass_floorbeams(vmf: VMF, temp_name: str):
                 # Now merge the two lists. We then need to update all dict
                 # locations to point to the new list.
 
-                if len(neigh_group) > len(our_group):
-                    small_group, large_group = our_group, neigh_group
-                else:
-                    small_group, large_group = neigh_group, our_group
-
+                small_group, large_group = (
+                    (our_group, neigh_group)
+                    if len(neigh_group) > len(our_group)
+                    else (neigh_group, our_group)
+                )
                 large_group.extend(small_group)
                 for pos in small_group:
                     groups[pos.as_tuple()] = large_group
@@ -763,10 +757,7 @@ def beam_hole_split(axis: str, min_pos: Vec, max_pos: Vec):
 
         # Extract normal from the z-axis.
         grid_height = min_pos.z // 128 * 128 + 64
-        if grid_height < min_pos.z:
-            normal = (0, 0, 1)
-        else:
-            normal = (0, 0, -1)
+        normal = (0, 0, 1) if grid_height < min_pos.z else (0, 0, -1)
         for pos in min_pos.iter_line(max_pos, 128):
             try:
                 hole_type = HOLES[(pos.x, pos.y, grid_height), normal]

@@ -53,23 +53,19 @@ class StyleVPK(PakObject):
         """Read the VPK file from the package."""
         vpk_name = data.info['filename']
 
-        source_folder = os.path.normpath('vpk/' + vpk_name)
+        source_folder = os.path.normpath(f'vpk/{vpk_name}')
 
         # At least one exists?
         if not any(data.fsys.walk_folder(source_folder)):
-            raise Exception(
-                'VPK object "{}" has no associated files!'.format(data.id)
-            )
+            raise Exception(f'VPK object "{data.id}" has no associated files!')
 
         return cls(data.id, data.fsys, source_folder)
 
     @staticmethod
     def export(exp_data: ExportData) -> None:
         """Generate the VPK file in the game folder."""
-        sel_vpk_name = exp_data.selected_style.vpk_name
-
         sel_vpk: Optional[StyleVPK]
-        if sel_vpk_name:
+        if sel_vpk_name := exp_data.selected_style.vpk_name:
             try:
                 sel_vpk = exp_data.packset.obj_by_id(StyleVPK, sel_vpk_name)
             except KeyError:

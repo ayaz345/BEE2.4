@@ -327,24 +327,21 @@ class Game:
 
         exp_style = config.get_val(gm_id, 'exported_style', '') or None
 
-        mod_times = {}
-
-        for name, value in config.items(gm_id):
-            if name.startswith('pack_mod_'):
-                mod_times[name[9:].casefold()] = srctools.conv_int(value)
-
+        mod_times = {
+            name[9:].casefold(): srctools.conv_int(value)
+            for name, value in config.items(gm_id)
+            if name.startswith('pack_mod_')
+        }
         return cls(gm_id, steam_id, folder, mod_times, exp_style)
 
     def save(self) -> None:
         """Write a game into the config page."""
         # Wipe the original configs
-        CONFIG[self.name] = {}
-        CONFIG[self.name]['SteamID'] = self.steamID
-        CONFIG[self.name]['Dir'] = self.root
+        CONFIG[self.name] = {'SteamID': self.steamID, 'Dir': self.root}
         if self.exported_style is not None:
             CONFIG[self.name]['exported_style'] = self.exported_style
         for pack, mod_time in self.mod_times.items():
-            CONFIG[self.name]['pack_mod_' + pack] = str(mod_time)
+            CONFIG[self.name][f'pack_mod_{pack}'] = str(mod_time)
 
     def dlc_priority(self) -> Iterator[str]:
         """Iterate through all subfolders, in order of high to low priority.
@@ -357,8 +354,8 @@ class Game:
         """
         dlc_count = 1
         priority = ["portal2"]
-        while os.path.isdir(self.abs_path("portal2_dlc" + str(dlc_count))):
-            priority.append("portal2_dlc" + str(dlc_count))
+        while os.path.isdir(self.abs_path(f"portal2_dlc{dlc_count}")):
+            priority.append(f"portal2_dlc{dlc_count}")
             dlc_count += 1
         if os.path.isdir(self.abs_path("update")):
             priority.append("update")
@@ -446,13 +443,12 @@ class Game:
                                 utils.get_indent(line) + GAMEINFO_LINE + '\n',
                                 )
                             break
-                    else:
-                        if clean_line == GAMEINFO_LINE:
-                            LOGGER.debug(
-                                "Removing gameinfo hook from {}", info_path
-                            )
-                            data.pop(line_num)
-                            break
+                    elif clean_line == GAMEINFO_LINE:
+                        LOGGER.debug(
+                            "Removing gameinfo hook from {}", info_path
+                        )
+                        data.pop(line_num)
+                        break
                 else:
                     if add_line:
                         LOGGER.warning(
@@ -499,12 +495,11 @@ class Game:
             return
 
         for i, line in enumerate(data):
-            match = re.match(
+            if match := re.match(
                 br'// BEE\W*2 EDIT FLAG\W*=\W*([01])',
                 line,
                 re.IGNORECASE,
-            )
-            if match:
+            ):
                 if match.group(1) == b'0':
                     LOGGER.info('FGD editing disabled by file.')
                     return  # User specifically disabled us.
@@ -571,7 +566,7 @@ class Game:
                 start_folder = start_folder.casefold()
 
                 if start_folder == 'instances':
-                    dest = self.abs_path(INST_PATH + '/' + path.casefold())
+                    dest = self.abs_path(f'{INST_PATH}/{path.casefold()}')
                 elif start_folder in ('bee2', 'music_samp'):
                     screen_func('RES', start_folder)
                     continue  # Skip app icons and music samples.
@@ -654,7 +649,7 @@ class Game:
         export_screen.set_length('BACK', len(FILES_TO_BACKUP))
         # files in compiler/
         try:
-            num_compiler_files = sum(1 for file in utils.install_path('compiler').rglob('*'))
+            num_compiler_files = sum(1 for _ in utils.install_path('compiler').rglob('*'))
         except FileNotFoundError:
             num_compiler_files = 0
 
@@ -768,7 +763,7 @@ class Game:
 
             for name, file, ext in FILES_TO_BACKUP:
                 item_path = self.abs_path(file + ext)
-                backup_path = self.abs_path(file + '_original' + ext)
+                backup_path = self.abs_path(f'{file}_original{ext}')
 
                 if not os.path.isfile(item_path):
                     # We can't back up at all.
@@ -812,7 +807,7 @@ class Game:
                                 file=file + ext,
                             ),
                         ):
-                            webbrowser.open('steam://validate/' + str(self.steamID))
+                            webbrowser.open(f'steam://validate/{str(self.steamID)}')
                         return False, vpk_success
 
                 if should_backup:
@@ -1012,8 +1007,7 @@ class Game:
         fizz_colors: dict[Vec_tuple, tuple[float, str]] = {}
         mat_path = self.abs_path('bee2/materials/bee2/fizz_sides/side_color_')
         for brush_conf in conf.find_all('Fizzlers', 'Fizzler', 'Brush'):
-            fizz_color = brush_conf['Side_color', '']
-            if fizz_color:
+            if fizz_color := brush_conf['Side_color', '']:
                 fizz_colors[Vec.from_str(fizz_color).as_tuple()] = (
                     brush_conf.float('side_alpha', 1),
                     brush_conf['side_vortex', fizz_color]
@@ -1030,12 +1024,12 @@ class Game:
                 f.write(FIZZLER_EDGE_MAT.format(Vec(fizz_color_vec), fizz_vortex_color))
                 if alpha != 1:
                     # Add the alpha value, but replace 0.5 -> .5 to save a char.
-                    f.write('$outputintensity {}\n'.format(format(alpha, 'g').replace('0.', '.')))
+                    f.write(f"$outputintensity {format(alpha, 'g').replace('0.', '.')}\n")
                 f.write(FIZZLER_EDGE_MAT_PROXY)
 
     def launch(self):
         """Try and launch the game."""
-        webbrowser.open('steam://rungameid/' + str(self.steamID))
+        webbrowser.open(f'steam://rungameid/{str(self.steamID)}')
 
     def copy_mod_music(self) -> set[str]:
         """Copy music files from Tag and PS:Mel.
@@ -1152,10 +1146,7 @@ def scan_music_locs():
     """
     global MUSIC_TAG_LOC, MUSIC_MEL_VPK
     found_tag = False
-    steamapp_locs = set()
-    for gm in all_games:
-        steamapp_locs.add(os.path.normpath(gm.abs_path('../')))
-
+    steamapp_locs = {os.path.normpath(gm.abs_path('../')) for gm in all_games}
     for loc in steamapp_locs:
         tag_loc = os.path.join(loc, MUSIC_TAG_DIR)
         mel_loc = os.path.join(loc, MUSIC_MEL_DIR)
@@ -1297,7 +1288,7 @@ def add_game(e=None):
         title,
         TransToken.ui(
             'Select the folder where the game executable is located ({appname})...'
-        ).format(appname='portal2' + EXE_SUFFIX),
+        ).format(appname=f'portal2{EXE_SUFFIX}'),
     )
     if utils.WIN:
         exe_loc = filedialog.askopenfilename(

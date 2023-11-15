@@ -170,10 +170,11 @@ class OccuType(Flag):
             return _occu_type_str[value]
         except KeyError:
             pass
-        names = []
-        for name, occu_type in OCCU_TYPES.items():
-            if name != 'COLLIDE_EVERYTHING' and occu_type.value & value:
-                names.append(name)
+        names = [
+            name
+            for name, occu_type in OCCU_TYPES.items()
+            if name != 'COLLIDE_EVERYTHING' and occu_type.value & value
+        ]
         names.sort()
         res = _occu_type_str[value] = ' '.join(names)
         return res
@@ -400,6 +401,7 @@ class Overlay:
 
 
 # Cache these coordinates, since most items are going to be near the origin.
+# Cache these coordinates, since most items are going to be near the origin.
 _coord_cache: dict[tuple[int, int, int], Coord] = {}
 
 NORMALS = {
@@ -431,10 +433,17 @@ FACE_TYPES: dict[str, FaceType] = {
     for face in FaceType
 }
 OCCU_TYPES: dict[str, OccuType] = {
-    'COLLIDE_' + name: OccuType[name]
+    f'COLLIDE_{name}': OccuType[name]
     for name in [
-        "NOTHING", "SOLID", "GRATING", "GLASS", "BRIDGE", "FIZZLER", "PHYSICS",
-        "ANTLINES", "EVERYTHING",
+        "NOTHING",
+        "SOLID",
+        "GRATING",
+        "GLASS",
+        "BRIDGE",
+        "FIZZLER",
+        "PHYSICS",
+        "ANTLINES",
+        "EVERYTHING",
     ]
 }
 
@@ -705,11 +714,7 @@ class SubType:
         )
 
     def __getstate__(self) -> object:
-        if self.pal_pos is None:
-            x, y = -1, -1
-        else:
-            x, y = self.pal_pos
-
+        x, y = (-1, -1) if self.pal_pos is None else self.pal_pos
         anim = [self.anims.get(anim, -1) for anim in Anim]
         while anim and anim[-1] == -1:  # Remove any -1 from the end.
             anim.pop()
@@ -738,10 +743,7 @@ class SubType:
             for anim, ind in zip(Anim, anims)
             if ind != -1
         }
-        if x >= 0 and y >= 0:
-            self.pal_pos = x, y
-        else:
-            self.pal_pos = None
+        self.pal_pos = (x, y) if x >= 0 and y >= 0 else None
 
     @classmethod
     def parse(cls, tok: Tokenizer, pak_id: str) -> SubType:
@@ -786,14 +788,13 @@ class SubType:
                         subtype.pal_icon = FSPath(tok.expect(Token.STRING)).with_suffix('.vtf')
                     elif subkey == 'position':
                         points = tok.expect(Token.STRING).split()
-                        if len(points) in (2, 3):
-                            try:
-                                x = int(points[0])
-                                y = int(points[1])
-                            except ValueError:
-                                raise tok.error('Invalid position value!') from None
-                        else:
+                        if len(points) not in {2, 3}:
                             raise tok.error('Incorrect number of points in position') from None
+                        try:
+                            x = int(points[0])
+                            y = int(points[1])
+                        except ValueError:
+                            raise tok.error('Invalid position value!') from None
                         subtype.pal_pos = x, y
                     else:
                         raise tok.error('Unknown palette option "{}"!', subkey)
@@ -1153,7 +1154,7 @@ class Item:
             default = ''
             index = 0
             user_default = True
-            for prop_value in tok.block(prop_str + ' options'):
+            for prop_value in tok.block(f'{prop_str} options'):
                 prop_value = prop_value.casefold()
                 if prop_value == 'defaultvalue':
                     default = tok.expect(Token.STRING)
@@ -1274,22 +1275,20 @@ class Item:
             try:
                 conn_type = ConnTypes(conn_name.upper())
             except ValueError:
-                # Our custom BEEMOD options.
-                if conn_name.casefold() in ('bee', 'bee2'):
-                    for key in tok.block(conn_name):
-                        value = tok.expect(Token.STRING, skip_newline=False)
-                        if key.casefold() == 'force':
-                            value = value.casefold()
-                            if 'in' in value:
-                                self.force_input = True
-                            if 'out' in value:
-                                self.force_output = True
-                        else:
-                            prop_block.append(Property(key, value))
-                    continue  # We deal with this after the export block is done.
-                else:
+                if conn_name.casefold() not in ('bee', 'bee2'):
                     raise tok.error('Unknown connection type "{}"!', conn_name)
 
+                for key in tok.block(conn_name):
+                    value = tok.expect(Token.STRING, skip_newline=False)
+                    if key.casefold() == 'force':
+                        value = value.casefold()
+                        if 'in' in value:
+                            self.force_input = True
+                        if 'out' in value:
+                            self.force_output = True
+                    else:
+                        prop_block.append(Property(key, value))
+                continue  # We deal with this after the export block is done.
             act_name: str | None = None
             activate: str | None = None
             deact_name: str | None = None
@@ -1474,10 +1473,7 @@ class Item:
                 # Default to a single voxel.
                 added_parts.add((None, None))
             volume: Iterable[Coord]
-            if pos2 is None:
-                volume = [pos1]
-            else:
-                volume = Coord.bbox(pos1, pos2)
+            volume = [pos1] if pos2 is None else Coord.bbox(pos1, pos2)
             for pos in volume:
                 for sub_pos, sub_normal in added_parts:
                     self.occupy_voxels.add(OccupiedVoxel(
@@ -1980,5 +1976,5 @@ class Item:
     def iter_trans_tokens(self, source: str) -> Iterator[TransTokenSource]:
         """Iterate over translation tokens in this item."""
         for subtype in self.subtypes:
-            yield subtype.name, source + '.name'
-            yield subtype.pal_name, source + '.pal_name'
+            yield (subtype.name, f'{source}.name')
+            yield (subtype.pal_name, f'{source}.pal_name')

@@ -57,7 +57,7 @@ def make_cube_colourizer_legend(bee2_loc: Path) -> None:
             cells.append((256 + x * CELL_SIZE, 256 + y * CELL_SIZE/2, tim_val))
 
         timer += row_count
-    assert timer-1 == 30, f'Last cell = {timer-1}'
+    assert timer == 31, f'Last cell = {timer - 1}'
 
     font = img.get_pil_font(36)
 

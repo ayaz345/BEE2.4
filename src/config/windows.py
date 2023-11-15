@@ -34,11 +34,13 @@ class WindowState(config.Data, conf_name='PaneState', uses_id=True, palette_stor
             names.add(name)
         return {
             name: WindowState(
-                x=LEGACY_CONF.getint('win_state', name + '_x', -1),
-                y=LEGACY_CONF.getint('win_state', name + '_y', -1),
-                width=LEGACY_CONF.getint('win_state', name + '_width', -1),
-                height=LEGACY_CONF.getint('win_state', name + '_height', -1),
-                visible=LEGACY_CONF.getboolean('win_state', name + '_visible', True)
+                x=LEGACY_CONF.getint('win_state', f'{name}_x', -1),
+                y=LEGACY_CONF.getint('win_state', f'{name}_y', -1),
+                width=LEGACY_CONF.getint('win_state', f'{name}_width', -1),
+                height=LEGACY_CONF.getint('win_state', f'{name}_height', -1),
+                visible=LEGACY_CONF.getboolean(
+                    'win_state', f'{name}_visible', True
+                ),
             )
             for name in names
         }
@@ -104,9 +106,10 @@ class SelectorState(config.Data, conf_name='SelectorWindow', palette_stores=Fals
     @classmethod
     def parse_legacy(cls, conf: Property) -> dict[str, SelectorState]:
         """Convert the old legacy configuration."""
-        result: dict[str, SelectorState] = {}
-        for prop in conf.find_children('Selectorwindow'):
-            result[prop.name] = cls.parse_kv1(prop, 1)
+        result: dict[str, SelectorState] = {
+            prop.name: cls.parse_kv1(prop, 1)
+            for prop in conf.find_children('Selectorwindow')
+        }
         return result
 
     @classmethod
@@ -137,9 +140,9 @@ class SelectorState(config.Data, conf_name='SelectorWindow', palette_stores=Fals
     def parse_dmx(cls, data: Element, version: int) -> SelectorState:
         """Parse DMX elements."""
         assert version == 1
-        open_groups: Dict[str, bool] = {}
-        for name in data['closed'].iter_str():
-            open_groups[name.casefold()] = False
+        open_groups: Dict[str, bool] = {
+            name.casefold(): False for name in data['closed'].iter_str()
+        }
         for name in data['opened'].iter_str():
             open_groups[name.casefold()] = True
 

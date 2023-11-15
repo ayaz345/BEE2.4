@@ -64,12 +64,14 @@ def load_tiledefs(tiles: Iterable[TileDef], grid: Grid) -> None:
             'position': tuple((tile.pos + 64 * tile.normal) / 128),
         })
     goo_tiles = simple_tiles["goo"] = []
-    for pos, block in grid.items():
-        if block.is_top:  # Both goo and bottomless pits.
-            goo_tiles.append({
-                'orient': 'd',
-                'position': tuple((pos + (0.5, 0.5, 0.75)).as_tuple()),
-            })
+    goo_tiles.extend(
+        {
+            'orient': 'd',
+            'position': tuple((pos + (0.5, 0.5, 0.75)).as_tuple()),
+        }
+        for pos, block in grid.items()
+        if block.is_top
+    )
 
 
 def load_barriers(barriers: dict[
